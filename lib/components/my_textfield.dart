@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 class MyTextField extends StatelessWidget {
@@ -22,14 +24,16 @@ class MyTextField extends StatelessWidget {
         obscureText: obscureText,
         style: TextStyle(color: Colors.black),
         decoration: InputDecoration(
-          enabledBorder: const OutlineInputBorder(
+          enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.white),
+            borderRadius: BorderRadius.circular(6),
           ),
           focusedBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.black),
+            borderRadius: BorderRadius.circular(6),
           ),
           labelStyle: TextStyle(color: Colors.blue), // 라벨 텍스트 색상 지정
-          fillColor: Colors.grey.shade200, // textField 배경 색상 지정
+          fillColor: Colors.white, // textField 배경 색상 지정
           filled: true,
           hintText: hintText,
           hintStyle: TextStyle(color: Color(0xff7C7C8A)),

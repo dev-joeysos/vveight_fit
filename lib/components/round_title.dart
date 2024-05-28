@@ -13,7 +13,7 @@ class RoundTitle extends StatelessWidget {
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.white),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(25),
         color: Colors.grey[100],
       ),
       child: Image.asset(
