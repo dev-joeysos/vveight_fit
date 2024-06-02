@@ -63,7 +63,7 @@ class _GuidePageState extends State<GuidePage> {
       try {
         // API 호출
         var response = await http.post(
-          Uri.parse('http://13.125.4.213:3000/api/vbt_core/base_weights'),
+          Uri.parse('http://52.79.236.191:3000/api/vbt_core/base_weights'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(requestBody),
         );

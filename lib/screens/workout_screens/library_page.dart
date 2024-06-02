@@ -63,7 +63,7 @@ class _LibraryPageState extends State<LibraryPage> {
   Future<Map<String, List<Exercise>>> fetchRoutineData() async {
     try {
       final response = await http.post(
-        Uri.parse('http://13.125.4.213:3000/api/routine/getForm'),
+        Uri.parse('http://52.79.236.191:3000/api/routine/getForm'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },

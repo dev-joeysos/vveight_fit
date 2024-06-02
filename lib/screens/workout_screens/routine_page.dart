@@ -295,13 +295,13 @@ class _RoutinePageState extends State<RoutinePage> {
 
       for (int i = 0; i < selectedExercises.length; i++) {
         newExpandedStates[i] = expandedStates[
-        oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
+                oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
             false;
         newExerciseSets[i] = exerciseSets[
-        oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
+                oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
             [];
         newFailedStates[i] = getFailedStates[
-        oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
+                oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
             false; // 추가
       }
 
@@ -328,13 +328,13 @@ class _RoutinePageState extends State<RoutinePage> {
 
       for (String exerciseId in [...mainExerciseIds, ...subExerciseIds]) {
         final response = await http.post(
-          Uri.parse('http://13.125.4.213:3000/api/vbt_core/getAll'),
+          Uri.parse('http://52.79.236.191:3000/api/vbt_core/getAll'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
           body: jsonEncode(<String, dynamic>{
             'exercise_id': exerciseId,
-            'user_id': 00001, // 예시 사용자 ID
+            'user_id': 00001,
           }),
         );
 
@@ -402,7 +402,7 @@ class _RoutinePageState extends State<RoutinePage> {
       });
 
       final response = await http.post(
-        Uri.parse('http://13.125.4.213:3000/api/routine/create'),
+        Uri.parse('http://52.79.236.191:3000/api/routine/create'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -435,7 +435,7 @@ class _RoutinePageState extends State<RoutinePage> {
   Future<void> fetchRoutineById(int routineId) async {
     try {
       final response = await http.post(
-        Uri.parse('http://13.125.4.213:3000/api/routine/get'),
+        Uri.parse('http://52.79.236.191:3000/api/routine/get'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -446,9 +446,9 @@ class _RoutinePageState extends State<RoutinePage> {
       );
 
       print('Request body: ${jsonEncode(<String, dynamic>{
-        'routine_id': routineId,
-        'user_id': 00001,
-      })}');
+            'routine_id': routineId,
+            'user_id': 00001,
+          })}');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
 
@@ -509,7 +509,7 @@ class _RoutinePageState extends State<RoutinePage> {
               itemBuilder: (context, index) {
                 bool isExpanded = expandedStates[index] ?? false;
                 ExerciseData? exerciseData =
-                workoutData.getData(selectedExercises[index].name);
+                    workoutData.getData(selectedExercises[index].name);
 
                 return Column(
                   key: ValueKey(selectedExercises[index]),
@@ -539,9 +539,9 @@ class _RoutinePageState extends State<RoutinePage> {
                                   MaterialPageRoute(
                                     builder: (context) => GuidePage(
                                       exerciseName:
-                                      selectedExercises[index].name,
+                                          selectedExercises[index].name,
                                       exerciseId:
-                                      selectedExercises[index].exerciseId,
+                                          selectedExercises[index].exerciseId,
                                     ),
                                   ),
                                 );
@@ -573,7 +573,7 @@ class _RoutinePageState extends State<RoutinePage> {
                               key: ObjectKey(setDetail),
                               setDetail: setDetail,
                               setIndex:
-                              exerciseSets[index]!.indexOf(setDetail) + 1,
+                                  exerciseSets[index]!.indexOf(setDetail) + 1,
                               onUpdate: () => setState(() {}),
                               onDelete: () => _removeSetDetail(index,
                                   exerciseSets[index]!.indexOf(setDetail)),
@@ -630,44 +630,44 @@ class _RoutinePageState extends State<RoutinePage> {
           ),
           isExerciseSelected
               ? Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: _selectExercises,
-                child: Text('운동 추가'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (isWorkoutStarted) {
-                    workoutDuration =
-                        Provider.of<TimerService>(context, listen: false)
-                            .seconds;
-                    Provider.of<TimerService>(context, listen: false)
-                        .stopTimer();
-                    Navigator.of(context)
-                        .pushReplacement(MaterialPageRoute(
-                      builder: (context) => ReviewPage(
-                          workoutDuration: workoutDuration,
-                          workoutData: workoutData),
-                    ));
-                  } else {
-                    await getAll();
-                    await createRoutine(); // 루틴 생성 함수 호출
-                    _toggleWorkout();
-                  }
-                },
-                child: Text(isWorkoutStarted ? '운동 완료' : '운동 시작'),
-              ),
-              ElevatedButton(
-                onPressed: _printExercises,
-                child: Text('운동 목록 출력'),
-              ),
-            ],
-          )
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _selectExercises,
+                      child: Text('운동 추가'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (isWorkoutStarted) {
+                          workoutDuration =
+                              Provider.of<TimerService>(context, listen: false)
+                                  .seconds;
+                          Provider.of<TimerService>(context, listen: false)
+                              .stopTimer();
+                          Navigator.of(context)
+                              .pushReplacement(MaterialPageRoute(
+                            builder: (context) => ReviewPage(
+                                workoutDuration: workoutDuration,
+                                workoutData: workoutData),
+                          ));
+                        } else {
+                          await getAll();
+                          await createRoutine(); // 루틴 생성 함수 호출
+                          _toggleWorkout();
+                        }
+                      },
+                      child: Text(isWorkoutStarted ? '운동 완료' : '운동 시작'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _printExercises,
+                      child: Text('운동 목록 출력'),
+                    ),
+                  ],
+                )
               : ElevatedButton(
-            onPressed: _selectExercises,
-            child: Text('운동 선택'),
-          ),
+                  onPressed: _selectExercises,
+                  child: Text('운동 선택'),
+                ),
         ],
       ),
     );
@@ -676,7 +676,7 @@ class _RoutinePageState extends State<RoutinePage> {
   Future<String> fetchRoutineData() async {
     try {
       final response = await http.post(
-        Uri.parse('http://13.125.4.213:3000/api/routine/getForm'),
+        Uri.parse('http://52.79.236.191:3000/api/routine/getForm'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8'
         },

@@ -40,7 +40,7 @@ class SetResultPage extends StatelessWidget {
   }
 
   Future<void> _saveRegressionData(BuildContext context) async {
-    const url = 'http://13.125.4.213:3000/api/vbt_core/save';
+    const url = 'http://52.79.236.191:3000/api/vbt_core/save';
     final body = {
       'user_id': '00001',
       'exercise_id': exerciseId,

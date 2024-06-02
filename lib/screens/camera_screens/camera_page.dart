@@ -162,7 +162,7 @@ class _CameraPageState extends State<CameraPage> {
 
 // Function to perform API call and return data
   Future<Map<String, dynamic>?> postRegressionData() async {
-    var url = Uri.parse('http://13.125.4.213:3000/api/vbt_core/regression');
+    var url = Uri.parse('http://52.79.236.191:3000/api/vbt_core/regression');
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
