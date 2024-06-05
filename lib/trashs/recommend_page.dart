@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_project/screens/camera_screens/workCam_page.dart';
+import 'package:flutter_project/trashs/workCam_page.dart';
 
 class RecommendPage extends StatefulWidget {
   final double oneRM;

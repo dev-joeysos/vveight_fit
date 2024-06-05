@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:flutter_project/screens/workout_screens/recommend_page.dart';
-import '../workout_screens/set_result_page.dart';
+import 'package:flutter_project/trashs/recommend_page.dart';
+import '../result_screens/set_result_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 

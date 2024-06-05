@@ -5,6 +5,7 @@ import 'package:flutter_project/provider/regression_data.dart';
 import 'package:flutter_project/provider/regression_provider.dart';
 import 'package:flutter_project/provider/routine_state.dart';
 import 'package:flutter_project/provider/speed_values.dart';
+import 'package:flutter_project/provider/target_velocity.dart';
 import 'package:flutter_project/provider/workout_manager.dart';
 import 'package:flutter_project/provider/workout_save_success.dart';
 import 'package:flutter_project/screens/intro_screens/splash_screen.dart';
@@ -12,7 +13,7 @@ import 'package:provider/provider.dart';
 import 'components/timer_service.dart';
 import 'provider/workout_data.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import './screens/workout_screens/testing_result.dart';
+import 'screens/result_screens/testing_result.dart';
 
 void main() async {
   await initializeDateFormatting();
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => IsUpdated()),
         ChangeNotifierProvider(create: (_) => RegressionProvider()),
         ChangeNotifierProvider(create: (_) => WorkoutSaveProvider()),
+        ChangeNotifierProvider(create: (_) => TargetVelo()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

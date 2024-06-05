@@ -1,10 +1,10 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_project/screens/camera_screens/workCam_page.dart';
+import 'package:flutter_project/trashs/workCam_page.dart';
 import '../camera_screens/camera_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter_project/screens/workout_screens/recommend_page.dart';
+import 'package:flutter_project/trashs/recommend_page.dart';
 import 'package:flutter_project/screens/workout_screens/routine_page.dart';
 import '../camera_screens/testing.dart';
 import '../main_screens/my_page.dart';

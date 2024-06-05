@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_project/screens/sample_screens/workout_selection_page.dart';
+import '../setting_screens/workout_selection_page.dart';
 import 'home_page.dart';
 import 'my_page.dart';
 

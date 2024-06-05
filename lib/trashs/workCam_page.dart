@@ -5,7 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter_project/screens/workout_screens/routine_page.dart';
 import 'package:provider/provider.dart';
 
-import '../../provider/workout_data.dart';
+import '../provider/workout_data.dart';
 
 // Todo 원리: weight와 reps reps는 음..횟수를 저장할 필요가 없음 모델만 있으면 됨 그치
 // 음...측정 버튼 > 측정 중입니다 > 특정 속도 아래로 찍히면 운동 중단 알림

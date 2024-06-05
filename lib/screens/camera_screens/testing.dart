@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:flutter_project/screens/workout_screens/recommend_page.dart';
-import '../workout_screens/set_result_page.dart';
+import 'package:flutter_project/trashs/recommend_page.dart';
+import 'package:provider/provider.dart';
+import '../../provider/target_velocity.dart';
+import '../result_screens/set_result_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import '../workout_screens/testing_result.dart';
+import '../result_screens/testing_result.dart';
 
 class Testing extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -42,22 +44,10 @@ class _TestingState extends State<Testing> {
   int _buttonPressCount = 0;
   bool _isComplete = false;
   bool _isFrontCamera = false;
-  List<double> speedValues = [0.7, 0.6, 0.5]; // mean velocity
-  // Todo: 무게 별 속도 중단지점 알려주기
+  List<double> speedValues = [0.9, 0.7, 0.4]; // mean velocity
+  // Todo: 무게 별 속도 중단지점 알려주기 => Target velocity..
 
   List<double> maxSpeeds = [];
-
-  List<double> calculateStoppingSpeeds() {
-    if (widget.rData == null) {
-      return List.filled(widget.realWeights.length, 0.0);
-    }
-    double slope = double.parse(widget.rData?['slope'].toString() ?? '0.0');
-    double yIntercept = double.parse(widget.rData?['y_intercept'].toString() ?? '0.0');
-
-    return widget.realWeights.map((weight) {
-      return (slope * weight) + yIntercept;
-    }).toList();
-  }
 
   @override
   void initState() {
@@ -212,8 +202,7 @@ class _TestingState extends State<Testing> {
   Widget build(BuildContext context) {
     int minutes = _secondsPassed ~/ 60;
     int seconds = _secondsPassed % 60;
-    List<double> stoppingSpeeds = calculateStoppingSpeeds();
-
+    double targetVelocity = Provider.of<TargetVelo>(context).targetVelocity;
     return Scaffold(
       appBar: AppBar(title: Text("testing")),
       body: SafeArea(
@@ -250,7 +239,7 @@ class _TestingState extends State<Testing> {
                               TextStyle(color: Colors.white, fontSize: 20)),
                           if (_isMeasuring)
                             Text(
-                                "${((_buttonPressCount % 3) + 1)}세트 측정 중입니다.\n평균 속도: ${speedValues[(_buttonPressCount % 3) % speedValues.length].toStringAsFixed(2)} m/s\n중단 속도: ${stoppingSpeeds[(_buttonPressCount % 3)].toStringAsFixed(2)} m/s",
+                                "${((_buttonPressCount % 3) + 1)}세트 측정 중입니다.\n평균 속도: ${speedValues[(_buttonPressCount % 3) % speedValues.length].toStringAsFixed(2)} m/s\n중단 속도: ${targetVelocity.toStringAsFixed(2)} m/s",
                                 textAlign: TextAlign.center,
                                 style:
                                 TextStyle(fontSize: 20, color: Colors.blue)),

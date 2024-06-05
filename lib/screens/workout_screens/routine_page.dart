@@ -9,7 +9,8 @@ import '../../provider/regression_provider.dart';
 import '../../provider/routine_state.dart';
 import '../../provider/speed_values.dart';
 import '../../provider/workout_data.dart';
-import 'review_page.dart';
+import '../../provider/target_velocity.dart';
+import '../result_screens/review_page.dart';
 import 'guide_page.dart';
 import 'library_page.dart';
 import 'package:flutter_project/components/edit_routine.dart';
@@ -511,6 +512,7 @@ class _RoutinePageState extends State<RoutinePage> {
   }
 
   // 추가된 함수: 응답 데이터를 운동 세트에 매칭
+  // 추가된 함수: 응답 데이터를 운동 세트에 매칭
   void updateExerciseSets(List<dynamic> exercises) {
     setState(() {
       for (var exercise in exercises) {
@@ -525,10 +527,14 @@ class _RoutinePageState extends State<RoutinePage> {
             ));
           }
           exerciseSets[index] = sets;
+
+          // Set the target_velocity using a Provider
+          Provider.of<TargetVelo>(context, listen: false).setTargetVelocity(double.parse(exercise['target_velocity'].toString()));
         }
       }
     });
   }
+
 
   // 추가된 함수: 모든 운동 목록을 출력하는 함수
   void _printExercises() {

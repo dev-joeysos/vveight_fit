@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_project/screens/sample_screens/purpose_page.dart';
+import 'package:flutter_project/screens/setting_screens/purpose_page.dart';
 import 'package:provider/provider.dart';
 import '../../provider/regression_provider.dart';
 import '../workout_screens/guide_page.dart';

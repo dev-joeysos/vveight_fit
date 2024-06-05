@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_project/screens/workout_screens/recommend_page.dart';
+import 'package:flutter_project/trashs/recommend_page.dart';
 import '../camera_screens/camera_page.dart';
 import 'package:camera/camera.dart';
 
-import 'apit_test_page.dart';
+import '../../trashs/apit_test_page.dart';
 
 class ProfileCreationPage extends StatefulWidget {
   @override

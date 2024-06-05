@@ -7,10 +7,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../provider/workout_save_success.dart';
 
-// Todo: isSaved 감지 > true 변환 > getAll 한 번 더 쏘고 데이터 업데이트:= 달력에 갱신
 class HomePage extends StatefulWidget {
-  //final dynamic data;
-  // const HomePage({super.key, required this.data});
   final dynamic initialData;
 
   const HomePage({super.key, required this.initialData});
@@ -26,6 +23,7 @@ class _HomePageState extends State<HomePage> {
   final Map<DateTime, List<dynamic>> _events = {};
   Map<String, dynamic>? _workoutDetails;
   dynamic _data;
+  WorkoutSaveProvider? _workoutSaveProvider;
 
   @override
   void initState() {
@@ -34,23 +32,33 @@ class _HomePageState extends State<HomePage> {
     _selectedDay = DateTime.now();
     _updateImageBasedOnStatus(_selectedDay!);
     _prepareEventMap();
-    print('Received data: $_data');
-    Provider.of<WorkoutSaveProvider>(context, listen: false).addListener(_handleSaveStatusChange);
+    print('Received data: ${List.from(_data.reversed)}'); // 역순 출력
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final provider = Provider.of<WorkoutSaveProvider>(context);
+    if (_workoutSaveProvider != provider) {
+      _workoutSaveProvider?.removeListener(_handleSaveStatusChange);
+      _workoutSaveProvider = provider;
+      _workoutSaveProvider?.addListener(_handleSaveStatusChange);
+    }
   }
 
   @override
   void dispose() {
-    Provider.of<WorkoutSaveProvider>(context, listen: false).removeListener(_handleSaveStatusChange);
+    _workoutSaveProvider?.removeListener(_handleSaveStatusChange);
     super.dispose();
   }
 
   void _handleSaveStatusChange() async {
-    final isSaved = Provider.of<WorkoutSaveProvider>(context, listen: false).isSaved;
+    final isSaved = _workoutSaveProvider?.isSaved ?? false;
     if (isSaved) {
-      print('Old Data: $_data');
+      print('Old Data: ${List.from(_data.reversed)}');
       await _fetchNewData();
-      print('New Data: $_data');
-      Provider.of<WorkoutSaveProvider>(context, listen: false).setSaved(false);
+      print('New Data: ${List.from(_data.reversed)}');
+      _workoutSaveProvider?.setSaved(false);
     }
   }
 
@@ -80,7 +88,7 @@ class _HomePageState extends State<HomePage> {
   void _prepareEventMap() {
     _events.clear();
     for (var workout in _data) {
-      DateTime workoutDate = DateTime.parse(workout['date']);
+      DateTime workoutDate = DateTime.parse(workout['date']).toLocal();
       workoutDate = DateTime(workoutDate.year, workoutDate.month, workoutDate.day);
       if (_events[workoutDate] == null) {
         _events[workoutDate] = [];
@@ -93,6 +101,8 @@ class _HomePageState extends State<HomePage> {
       value.sort((a, b) => DateTime.parse(b['date']).compareTo(DateTime.parse(a['date'])));
       _events[key] = [value.first];
     });
+
+    print('Prepared events: $_events'); // 추가된 이벤트 출력
   }
 
   Future<void> _fetchWorkoutDetails(int workoutId) async {
@@ -140,8 +150,6 @@ class _HomePageState extends State<HomePage> {
                       padding: EdgeInsets.all(10.0),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        // border: Border.all(color: Colors.grey),
-                        // borderRadius: BorderRadius.circular(10.0),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -225,32 +233,32 @@ class _HomePageState extends State<HomePage> {
                                       maxY: 1.0,
                                       lineBarsData: [
                                         if (_workoutDetails![
-                                                'workout_regression'] !=
+                                        'workout_regression'] !=
                                             false)
                                           LineChartBarData(
                                             spots: _getLineSpots(
                                                 _workoutDetails![
-                                                    'workout_regression']),
+                                                'workout_regression']),
                                             isCurved: false,
                                             color: Color(0xff143365),
                                             barWidth: 5,
                                             isStrokeCapRound: false,
                                             belowBarData:
-                                                BarAreaData(show: false),
+                                            BarAreaData(show: false),
                                             dotData: FlDotData(
                                               show: false,
                                             ),
                                           ),
                                         LineChartBarData(
                                           spots: _getLineSpots(_workoutDetails![
-                                              'test_regression']),
+                                          'test_regression']),
                                           isCurved: false,
                                           color: Color(0xff6BBEE2),
                                           barWidth: 5,
                                           dashArray: [10, 8],
                                           isStrokeCapRound: false,
                                           belowBarData:
-                                              BarAreaData(show: false),
+                                          BarAreaData(show: false),
                                           dotData: FlDotData(
                                             show: false,
                                           ),
@@ -302,11 +310,11 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         rightTitles: AxisTitles(
                                           sideTitles:
-                                              SideTitles(showTitles: false),
+                                          SideTitles(showTitles: false),
                                         ),
                                         topTitles: AxisTitles(
                                           sideTitles:
-                                              SideTitles(showTitles: false),
+                                          SideTitles(showTitles: false),
                                         ),
                                       ),
                                       gridData: FlGridData(
@@ -316,7 +324,7 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                       borderData: FlBorderData(
                                         show:
-                                            false, // Hide the border around the chart
+                                        false, // Hide the border around the chart
                                       ),
                                       clipData: FlClipData.all(),
                                     ),
@@ -328,11 +336,6 @@ class _HomePageState extends State<HomePage> {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 16.0),
                             child: Container(
-                              // decoration: BoxDecoration(
-                              //   border:
-                              //       Border.all(color: Colors.black, width: 1.0),
-                              //   borderRadius: BorderRadius.circular(12.0),
-                              // ),
                               child: Image.asset(
                                 _imageAsset,
                                 height: 150,
@@ -417,8 +420,8 @@ class _HomePageState extends State<HomePage> {
                       calendarBuilders: CalendarBuilders(
                         defaultBuilder: (context, day, focusedDay) {
                           bool isEventDay = _events[
-                                      DateTime(day.year, day.month, day.day)] !=
-                                  null &&
+                          DateTime(day.year, day.month, day.day)] !=
+                              null &&
                               _events[DateTime(day.year, day.month, day.day)]!
                                   .isNotEmpty;
                           return Center(
@@ -428,7 +431,7 @@ class _HomePageState extends State<HomePage> {
                                 fontSize: 16.0,
                                 fontWeight: FontWeight.bold,
                                 color:
-                                    isEventDay ? Colors.red : Color(0xff3168A3),
+                                isEventDay ? Colors.red : Color(0xff3168A3),
                               ),
                             ),
                           );
@@ -485,7 +488,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       eventLoader: (day) {
                         return _events[
-                                DateTime(day.year, day.month, day.day)] ??
+                        DateTime(day.year, day.month, day.day)] ??
                             [];
                       },
                     ),
@@ -503,7 +506,7 @@ class _HomePageState extends State<HomePage> {
     double slope = double.parse(regressionData['slope'].toString());
     double yIntercept = double.parse(regressionData['y_intercept'].toString());
     List<FlSpot> spots = [];
-    for (int i = 50; i <= 100; i += 5) {
+    for (int i = 45; i <= 65; i += 5) {
       double x = i.toDouble();
       double y = slope * x + yIntercept;
       spots.add(FlSpot(x, y));
@@ -513,7 +516,7 @@ class _HomePageState extends State<HomePage> {
 
   void _updateImageBasedOnStatus(DateTime selectedDay) {
     DateTime dateOnly =
-        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
     if (_events[dateOnly] != null && _events[dateOnly]!.isNotEmpty) {
       var status = _events[dateOnly]![0]['status'];
       switch (status) {
@@ -536,7 +539,7 @@ class _HomePageState extends State<HomePage> {
 
   void _showWorkoutInfo(DateTime selectedDay) {
     DateTime dateOnly =
-        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
     if (_events[dateOnly] != null && _events[dateOnly]!.isNotEmpty) {
       var workout = _events[dateOnly]!.first; // 가장 최근의 운동 정보를 사용
       print(

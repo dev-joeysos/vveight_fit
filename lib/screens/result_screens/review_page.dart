@@ -147,6 +147,8 @@ class _ReviewPageState extends State<ReviewPage> {
 
       if (response.statusCode == 200) {
         print('Workout data saved successfully');
+        print('workout_id: ${response.body}');
+        // 응답 데이터 출력하기
         Provider.of<WorkoutSaveProvider>(context, listen: false).setSaved(true); // Update isSaved to true
       } else {
         print('Failed to save workout data: ${response.reasonPhrase}');
@@ -485,6 +487,7 @@ class _ReviewPageState extends State<ReviewPage> {
                           Provider.of<WorkoutManager>(context, listen: false).updateImageFile(_imageFile!);
                         }
                         Provider.of<WorkoutManager>(context, listen: false).updateWorkoutDuration(widget.workoutDuration);
+                        await _saveWorkoutData(); // API 호출 추가
                         await _saveWorkoutData(); // API 호출 추가
                         // 이제 상태가 업데이트 되었으므로 페이지를 닫습니다.
                         Navigator.pop(context);
