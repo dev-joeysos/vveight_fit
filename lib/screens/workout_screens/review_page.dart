@@ -1,10 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
 import '../../provider/workout_data.dart';
 import '../../provider/workout_manager.dart';
 
@@ -12,6 +12,19 @@ class ReviewPage extends StatefulWidget {
   final int workoutDuration; // 운동 시간을 초 단위로 받습니다.
   final WorkoutData workoutData; // 운동 데이터 추가
   final Map<String, dynamic> compareData;
+
+  // 그래프 그리기용 샘플 데이터
+  final List<FlSpot>? testRegressionSpots = [
+    FlSpot(45, 0.89),
+    FlSpot(55, 0.65),
+    FlSpot(60, 0.38),
+  ];
+
+  final List<FlSpot>? workoutRegressionSpots = [
+    FlSpot(40, 1.0),
+    FlSpot(50, 0.8),
+    FlSpot(60, 0.6),
+  ];
 
   ReviewPage({
     Key? key,
@@ -108,6 +121,18 @@ class _ReviewPageState extends State<ReviewPage> {
     }
   }
 
+  List<FlSpot> _getLineSpots(Map<String, dynamic> regressionData) {
+    double slope = double.parse(regressionData['slope'].toString());
+    double yIntercept = double.parse(regressionData['y_intercept'].toString());
+    List<FlSpot> spots = [];
+    for (int i = 40; i <= 80; i += 5) {
+      double x = i.toDouble();
+      double y = slope * x + yIntercept;
+      spots.add(FlSpot(x, y));
+    }
+    return spots;
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget> exerciseDetailsWidgets = widget.workoutData.exerciseDetails.entries.map((entry) {
@@ -119,6 +144,45 @@ class _ReviewPageState extends State<ReviewPage> {
     }).toList();
 
     String formattedDuration = formatDuration(widget.workoutDuration);
+    Map<String, dynamic>? compareResultMap;
+    List<FlSpot>? testRegressionSpots;
+    List<FlSpot>? workoutRegressionSpots;
+    String? status;
+
+    if (_compareResult.isNotEmpty) {
+      compareResultMap = json.decode(_compareResult);
+      if (compareResultMap != null) {
+        status = compareResultMap['status'];
+        if (compareResultMap['test_regression'] != null) {
+          testRegressionSpots = _getLineSpots(compareResultMap['test_regression']);
+        }
+        if (compareResultMap['workout_regression'] != null) {
+          workoutRegressionSpots = _getLineSpots(compareResultMap['workout_regression']);
+        }
+      }
+    }
+    // 상태에 따른 이미지 설정
+    String statusImageAsset;
+    switch (status) {
+      case 'burning':
+        statusImageAsset = 'assets/images/p_training/burning.jpeg';
+        break;
+      case 'ready':
+        statusImageAsset = 'assets/images/p_training/ready.jpeg';
+        break;
+      case 'normal':
+        statusImageAsset = 'assets/images/p_good.png';
+        break;
+      case 'testrequired':
+        statusImageAsset = 'assets/images/p_default.png';
+        break;
+      case 'exhausted':
+        statusImageAsset = 'assets/images/p_training/exhausted.jpeg';
+        break;
+      default:
+        statusImageAsset = 'assets/images/p_default.png';
+        break;
+    }
 
     return GestureDetector(
       onTap: () {
@@ -134,16 +198,16 @@ class _ReviewPageState extends State<ReviewPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 220),
+                    const SizedBox(height: 90),
                     const Text(
-                      '수고하셨습니다!', // Main greeting text
+                      '수고하셨어요!', // Main greeting text
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 30,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 9),
                     Row(
                       children: [
                         Expanded(
@@ -197,10 +261,11 @@ class _ReviewPageState extends State<ReviewPage> {
                                     width: 60,
                                     height: 60,
                                     fit: BoxFit.cover)
-                                    : Icon(
-                                  Icons.camera_alt, // 카메라 아이콘
-                                  size: 40,
-                                  color: Color(0xff003376), // 아이콘 색상
+                                    : Image.asset( // Display status image in place of camera icon
+                                  statusImageAsset,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),
@@ -208,7 +273,141 @@ class _ReviewPageState extends State<ReviewPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
+                    // Todo: 그래프 완성 > 실제 운동 무게 가져와서 넣기
+                    Container(
+                        width: 640,
+                        height: 360,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: 240,
+                                width: 300,
+                                child: LineChart(
+                                  LineChartData(
+                                    minX: 40, // X축 최소값 설정
+                                    maxX: 80, // X축 최대값 설정
+                                    minY: 0, // Y축 최소값 설정
+                                    maxY: 1.0, // Y축 최대값 설정
+                                    lineBarsData: [
+                                      if (workoutRegressionSpots != null)
+                                        LineChartBarData(
+                                          spots: workoutRegressionSpots,
+                                          isCurved: false,
+                                          color: Color(0xff143365),
+                                          barWidth: 5,
+                                          isStrokeCapRound: false,
+                                          belowBarData: BarAreaData(show: false),
+                                          dotData: FlDotData(show: false),
+                                        ),
+                                      if (testRegressionSpots != null)
+                                        LineChartBarData(
+                                          spots: testRegressionSpots,
+                                          isCurved: false,
+                                          color: Color(0xff6BBEE2),
+                                          barWidth: 5,
+                                          dashArray: [10, 8],
+                                          isStrokeCapRound: false,
+                                          belowBarData: BarAreaData(show: false),
+                                          dotData: FlDotData(show: true), // Dot data를 보이도록 설정
+                                        ),
+                                    ],
+                                    titlesData: FlTitlesData(
+                                      leftTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          interval: 0.2,
+                                          getTitlesWidget: (value, meta) {
+                                            if (value == 0) {
+                                              return Container(); // Hide the left bottom 0.0 value
+                                            }
+                                            return Padding(
+                                              padding: const EdgeInsets.only(right: 0.0),
+                                              child: Text(
+                                                value.toStringAsFixed(1),
+                                                style: TextStyle(fontSize: 15, color: Colors.grey),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      bottomTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          getTitlesWidget: (value, meta) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(top: 4.0),
+                                              child: Text(
+                                                '${value.toInt()}kg',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      rightTitles: AxisTitles(
+                                        sideTitles: SideTitles(showTitles: false),
+                                      ),
+                                      topTitles: AxisTitles(
+                                        sideTitles: SideTitles(showTitles: false),
+                                      ),
+                                    ),
+                                    gridData: FlGridData(
+                                      show: true,
+                                      horizontalInterval: 0.2,
+                                      drawVerticalLine: false,
+                                    ),
+                                    borderData: FlBorderData(
+                                      show: false,
+                                    ),
+                                    lineTouchData: LineTouchData(
+                                      touchTooltipData: LineTouchTooltipData(
+                                        getTooltipItems: (touchedSpots) {
+                                          return touchedSpots.map((touchedSpot) {
+                                            return LineTooltipItem(
+                                              '${touchedSpot.x}kg, ${touchedSpot.y.toStringAsFixed(2)}m/s',
+                                              const TextStyle(color: Colors.black),
+                                            );
+                                          }).toList();
+                                        },
+                                      ),
+                                    ),
+                                    clipData: FlClipData.all(), // 경계선을 넘지 않도록 설정
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: Text(
+                                  'Mean Velocity',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '45kg-0.89m/s, 55kg-0.65m/s, 60kg-0.38m/s',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ),
+                    SizedBox(height: 20),
                     TextField(
                       maxLines: null, // 여러 줄 입력 허용
                       onChanged: (value) {
@@ -229,8 +428,12 @@ class _ReviewPageState extends State<ReviewPage> {
                         ),
                       ),
                     ),
+                    // Todo: 오운완 사진 업로드
+                    // IconButton(
+                    //   icon: Icon(Icons.camera_alt, color: Colors.white),
+                    //   onPressed: () => _showPickOptionsDialog(context),
+                    // ),
                     const SizedBox(height: 20),
-                    // ...exerciseDetailsWidgets,
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xff6AC7F0),

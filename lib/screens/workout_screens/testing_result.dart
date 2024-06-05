@@ -42,14 +42,14 @@ class _TestingResultState extends State<TestingResult> {
   bool _providerUpdated = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_providerUpdated && widget.rData != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Provider.of<SpeedValuesProvider>(context, listen: false)
-            .updateSpeedValues(widget.exerciseName, widget.speedValues);
-      });
-      _providerUpdated = true;
+      void didChangeDependencies() {
+        super.didChangeDependencies();
+        if (!_providerUpdated && widget.rData != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Provider.of<SpeedValuesProvider>(context, listen: false)
+                .updateSpeedValues(widget.exerciseName, widget.speedValues);
+          });
+          _providerUpdated = true;
     }
   }
 
@@ -63,8 +63,7 @@ class _TestingResultState extends State<TestingResult> {
     return linePoints;
   }
 
-  // Todo: 여기서 저장하고 나면, routine_page로 돌아갔을 때 업데이트 성공적으로 저장됨. 그때 저장하는 regression_id를 proivder로 써도 되고
-  // 아무튼 RoutinePage에서 운동 완료 눌렀을 때 workout/save 해야 함.
+  //
   Future<void> _saveRegressionData(BuildContext context) async {
     const url = 'http://52.79.236.191:3000/api/vbt_core/save';
     final body = {
@@ -73,9 +72,9 @@ class _TestingResultState extends State<TestingResult> {
       'name': widget.exerciseName,
       'regression': {
         'one_rep_max': widget.oneRM.toString(),
-        'r_squared': widget.rSquared.toString(),
-        'slope': widget.slope.toString(),
-        'y_intercept': widget.yIntercept.toString(),
+        'r_squared': widget.rData?['r_squared']?.toString() ?? widget.rSquared.toString(),
+        'slope': widget.rData?['slope']?.toString() ?? widget.slope.toString(),
+        'y_intercept': widget.rData?['y_intercept']?.toString() ?? widget.yIntercept.toString(),
         'type': 'Workout'
       }
     };
