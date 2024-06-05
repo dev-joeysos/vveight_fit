@@ -4,11 +4,13 @@ import 'package:flutter_project/screens/camera_screens/workCam_page.dart';
 class RecommendPage extends StatefulWidget {
   final double oneRM;
   final String exerciseName;
+  final Map<String, dynamic>? regressionData; // 회귀 데이터 받기
 
   const RecommendPage({
     Key? key,
     required this.oneRM,
     required this.exerciseName,
+    this.regressionData,
   }) : super(key: key);
 
   @override
@@ -17,7 +19,15 @@ class RecommendPage extends StatefulWidget {
 
 class _RecommendPageState extends State<RecommendPage> {
   int? _selectedRoutine = 0; // Default to the first routine
-
+  @override
+  void initState() {
+    super.initState();
+    if (widget.regressionData != null) {
+      print('Received regressionData: ${widget.regressionData}');
+    } else {
+      print('No regressionData received');
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,8 +107,8 @@ class _RecommendPageState extends State<RecommendPage> {
                               weights: percentages
                                   .map((p) => widget.oneRM * p)
                                   .toList(),
-                              reps: reps, exerciseName: widget.exerciseName,
-                            ),
+                              exerciseName: widget.exerciseName,
+                            ), // Todo: reps : reps (deleted)
                           ),
                         );
                       },

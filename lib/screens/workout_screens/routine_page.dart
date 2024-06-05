@@ -3,13 +3,21 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../components/timer_service.dart';
+import '../../provider/isUpdated.dart';
+import '../../provider/regression_data.dart';
 import '../../provider/routine_state.dart';
+import '../../provider/speed_values.dart';
 import '../../provider/workout_data.dart';
 import 'review_page.dart';
 import 'guide_page.dart';
 import 'library_page.dart';
 import 'package:flutter_project/components/edit_routine.dart';
 import 'package:http/http.dart' as http;
+
+// Todo: 다른 페이지에서 pop 되면서 돌아오면 이 페이지가 갱신되어야 함 > Provider 로 bool 값 관리해서
+// Todo: Provider 가 true면 새로 '운동 시작' 버튼 기능을 한 번 더 수행함 > 최신 루틴 데이터 불러옴
+// Todo: 값이 변하면 getAll 다시 찍어서 새로고침하게 함
+// Todo: 운동 완료 누르면 workout/save 찍고 다시 false로 변경
 
 class SetDetail {
   double weight = 0;
@@ -36,6 +44,10 @@ class _RoutinePageState extends State<RoutinePage> {
   Map<int, List<SetDetail>> exerciseSets = {};
   Map<int, bool> getFailedStates = {}; // 각 운동에 대한 _getFailed 상태를 관리하기 위한 Map
   Map<int, Map<String, dynamic>> exerciseRegressionData = {};
+
+  List<double> getRealWeights(int exerciseIndex) {
+    return exerciseSets[exerciseIndex]!.map((setDetail) => setDetail.weight).toList();
+  }
 
   bool isWorkoutStarted = false;
   Timer? workoutTimer;
@@ -167,6 +179,7 @@ class _RoutinePageState extends State<RoutinePage> {
           _timerOverlay = _createTimerOverlayEntry();
           Overlay.of(context)?.insert(_timerOverlay!);
         }
+        expandedStates.updateAll((key, value) => true);
       } else {
         Provider.of<TimerService>(context, listen: false).stopTimer();
         _timerOverlay?.remove();
@@ -291,17 +304,17 @@ class _RoutinePageState extends State<RoutinePage> {
 
       var newExpandedStates = Map<int, bool>();
       var newExerciseSets = Map<int, List<SetDetail>>();
-      var newFailedStates = Map<int, bool>(); // 추가
+      var newFailedStates = Map<int, bool>();
 
       for (int i = 0; i < selectedExercises.length; i++) {
         newExpandedStates[i] = expandedStates[
-                oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
+        oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
             false;
         newExerciseSets[i] = exerciseSets[
-                oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
+        oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
             [];
         newFailedStates[i] = getFailedStates[
-                oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
+        oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
             false; // 추가
       }
 
@@ -338,7 +351,6 @@ class _RoutinePageState extends State<RoutinePage> {
           }),
         );
 
-        print('Response status for $exerciseId: ${response.statusCode}');
         print('Response body for $exerciseId: ${response.body}');
 
         if (response.statusCode == 200) {
@@ -353,8 +365,7 @@ class _RoutinePageState extends State<RoutinePage> {
           }
 
           // Extract the most recent data
-          var mostRecentData = data[data.length - 1];
-
+          var mostRecentData = data[0];
           int index = selectedExercises
               .indexWhere((exercise) => exercise.exerciseId == exerciseId);
           setState(() {
@@ -364,6 +375,10 @@ class _RoutinePageState extends State<RoutinePage> {
               'r_squared': mostRecentData['r_squared'],
             };
           });
+
+          // Update the regression ID in the provider
+          Provider.of<RDP>(context, listen: false)
+              .setTestRegressionId(mostRecentData['regression_id']);
         }
       }
     } catch (e) {
@@ -388,17 +403,17 @@ class _RoutinePageState extends State<RoutinePage> {
           .map((exercise) => exercise.exerciseId)
           .toList();
 
-      int recentRegressionId = 00004; // Example recent regression ID
+      int? recentRegressionId = Provider.of<RDP>(context, listen: false).testRegressionId;
 
       final requestBody = jsonEncode(<String, dynamic>{
-        'user_id': '00001', // Example user ID
+        'user_id': '00001',
         'target': widget.target,
         'routine_name': 'default',
         'purpose': widget.purpose,
         'recent_regression_id': recentRegressionId,
         'main': mainExerciseIds,
         'sub': subExerciseIds,
-        'units': ['0.25']
+        'units': ['1.25', '2.5', '5', '10', '20']
       });
 
       final response = await http.post(
@@ -446,9 +461,9 @@ class _RoutinePageState extends State<RoutinePage> {
       );
 
       print('Request body: ${jsonEncode(<String, dynamic>{
-            'routine_id': routineId,
-            'user_id': 00001,
-          })}');
+        'routine_id': routineId,
+        'user_id': 00001,
+      })}');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
 
@@ -496,6 +511,20 @@ class _RoutinePageState extends State<RoutinePage> {
   Widget build(BuildContext context) {
     var workoutData = Provider.of<WorkoutData>(context);
     var routineState = Provider.of<RoutineState>(context);
+    var speedValuesProvider = Provider.of<SpeedValuesProvider>(context);
+    var updateStatus = Provider.of<IsUpdated>(context);
+    // Check if isUpdated is true and call getAll if it is
+    // Check if isUpdated is true and call getAll if it is
+    if (updateStatus.isUpdated) {
+      Future.microtask(() async {
+        await getAll();
+        updateStatus.setUpdated(false); // Reset isUpdated to false
+        _toggleWorkout(); // Trigger workout action again
+        setState(() {
+          expandedStates.updateAll((key, value) => true);
+        });
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -509,165 +538,194 @@ class _RoutinePageState extends State<RoutinePage> {
               itemBuilder: (context, index) {
                 bool isExpanded = expandedStates[index] ?? false;
                 ExerciseData? exerciseData =
-                    workoutData.getData(selectedExercises[index].name);
+                workoutData.getData(selectedExercises[index].name);
+                List<double>? speedValues =
+                speedValuesProvider.getSpeedValues(selectedExercises[index].name);
 
-                return Column(
-                  key: ValueKey(selectedExercises[index]),
-                  children: [
-                    ListTile(
-                      title: Text(selectedExercises[index].name),
-                      onTap: () => _toggleExpanded(index),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          ReorderableDragStartListener(
-                            index: index,
-                            child: Icon(Icons.drag_handle),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () => _showDeleteSnackbar(index),
-                          ),
-                          if (getFailedStates[index] ?? false)
-                            IconButton(
-                              icon: Icon(Icons.play_arrow),
-                              color: Colors.blueAccent,
-                              onPressed: () async {
-                                _startWorkout(); // 운동 시작 콜백 호출
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => GuidePage(
-                                      exerciseName:
-                                          selectedExercises[index].name,
-                                      exerciseId:
-                                          selectedExercises[index].exerciseId,
-                                    ),
-                                  ),
-                                );
-                                print(
-                                    'Exercise Name: ${routineState.exerciseName}');
-                                print(
-                                    'Regression ID: ${routineState.regressionId}');
-                              },
-                            ),
-                        ],
+                return Container(
+                  margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[100],
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: Offset(0, 1),
                       ),
-                    ),
-                    if (isExpanded && exerciseSets[index]!.isNotEmpty)
-                      Column(
-                        children: [
-                          if (exerciseData != null)
-                            ...exerciseData.sessionCounts
-                                .asMap()
-                                .entries
-                                .map((entry) {
-                              return ListTile(
-                                title: Text('${entry.key + 1} 세트'),
-                                subtitle: Text(
-                                    '무게: ${exerciseData.weights[entry.key].toStringAsFixed(0)} kg / 횟수: ${entry.value}회'),
+                    ],
+                  ),
+                  key: ValueKey(selectedExercises[index]),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        title: Text(selectedExercises[index].name,
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 21)),
+                        onTap: () => _toggleExpanded(index),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            ReorderableDragStartListener(
+                              index: index,
+                              child: Icon(Icons.drag_handle),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () => _showDeleteSnackbar(index),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isExpanded && exerciseSets[index]!.isNotEmpty)
+                        Column(
+                          children: [
+                            if (exerciseData != null)
+                              ...exerciseData.sessionCounts
+                                  .asMap()
+                                  .entries
+                                  .map((entry) {
+                                return ListTile(
+                                  title: Text('${entry.key + 1} 세트'),
+                                  subtitle: Text(
+                                      '무게: ${exerciseData.weights[entry.key].toStringAsFixed(0)} kg / 횟수: ${entry.value}회'),
+                                );
+                              }).toList(),
+                            ...exerciseSets[index]!.map((setDetail) {
+                              List<double> realWeights = getRealWeights(index);
+                              return EditRoutine(
+                                key: ObjectKey(setDetail),
+                                setDetail: setDetail,
+                                setIndex: exerciseSets[index]!.indexOf(setDetail) + 1,
+                                onUpdate: () => setState(() {}),
+                                onDelete: () =>
+                                    _removeSetDetail(index, exerciseSets[index]!.indexOf(setDetail)),
+                                exerciseName: selectedExercises[index].name,
+                                exerciseId: selectedExercises[index].exerciseId,
+                                onStartWorkout: _startWorkout,
+                                weight: setDetail.weight,
+                                reps: setDetail.reps,
+                                realWeights: realWeights,
+                                regressionData: exerciseRegressionData[index],
                               );
                             }).toList(),
-                          ...exerciseSets[index]!.map((setDetail) {
-                            return EditRoutine(
-                              key: ObjectKey(setDetail),
-                              setDetail: setDetail,
-                              setIndex:
-                                  exerciseSets[index]!.indexOf(setDetail) + 1,
-                              onUpdate: () => setState(() {}),
-                              onDelete: () => _removeSetDetail(index,
-                                  exerciseSets[index]!.indexOf(setDetail)),
-                              exerciseName: selectedExercises[index].name,
-                              exerciseId: selectedExercises[index].exerciseId,
-                              onStartWorkout: _startWorkout,
-                            );
-                          }).toList(),
-                          if (exerciseRegressionData[index] != null)
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                      'Slope: ${exerciseRegressionData[index]!['slope']}'),
-                                  Text(
-                                      'Y-Intercept: ${exerciseRegressionData[index]!['y_intercept']}'),
-                                  Text(
-                                      'R-Squared: ${exerciseRegressionData[index]!['r_squared']}'),
-                                ],
-                              ),
-                            ),
-                          if (exerciseSets[index]!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Fetched Data:'),
-                                  ...exerciseSets[index]!.map((setDetail) {
-                                    return Text(
-                                      'Weight: ${setDetail.weight}, Reps: ${setDetail.reps}}',
+                            // if (exerciseRegressionData[index] != null)
+                            //   Padding(
+                            //     padding: const EdgeInsets.all(8.0),
+                            //     child: Column(
+                            //       crossAxisAlignment: CrossAxisAlignment.start,
+                            //       children: [
+                            //         Text('Slope: ${exerciseRegressionData[index]!['slope']}'),
+                            //         Text('Y-Intercept: ${exerciseRegressionData[index]!['y_intercept']}'),
+                            //         Text('R-Squared: ${exerciseRegressionData[index]!['r_squared']}'),
+                            //       ],
+                            //     ),
+                            //   ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      exerciseSets[index]!.add(SetDetail());
+                                    });
+                                  },
+                                  child: Text('세트 추가'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    List<double> realWeights = getRealWeights(index);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => GuidePage(
+                                          weight: exerciseSets[index]!.last.weight,
+                                          reps: exerciseSets[index]!.last.reps,
+                                          exerciseId: selectedExercises[index].exerciseId,
+                                          exerciseName: selectedExercises[index].name,
+                                          realWeights: realWeights,
+                                          regressionData: exerciseRegressionData[index],
+                                        ),
+                                      ),
                                     );
-                                  }).toList(),
-                                ],
-                              ),
+                                  },
+                                  child: Text('세트 시작'),
+                                ),
+                              ],
                             ),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                exerciseSets[index]!.add(SetDetail());
-                              });
-                            },
-                            child: Text('세트 추가'),
-                          ),
-                        ],
-                      ),
-                  ],
+                          ],
+                        ),
+                    ],
+                  ),
                 );
               },
               onReorder: _onReorder,
             ),
           ),
+
           isExerciseSelected
               ? Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _selectExercises,
-                      child: Text('운동 추가'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (isWorkoutStarted) {
-                          workoutDuration =
-                              Provider.of<TimerService>(context, listen: false)
-                                  .seconds;
-                          Provider.of<TimerService>(context, listen: false)
-                              .stopTimer();
-                          Navigator.of(context)
-                              .pushReplacement(MaterialPageRoute(
-                            builder: (context) => ReviewPage(
-                                workoutDuration: workoutDuration,
-                                workoutData: workoutData),
-                          ));
-                        } else {
-                          await getAll();
-                          await createRoutine(); // 루틴 생성 함수 호출
-                          _toggleWorkout();
-                        }
-                      },
-                      child: Text(isWorkoutStarted ? '운동 완료' : '운동 시작'),
-                    ),
-                    ElevatedButton(
-                      onPressed: _printExercises,
-                      child: Text('운동 목록 출력'),
-                    ),
-                  ],
-                )
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _selectExercises,
+                child: Text('운동 추가'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (isWorkoutStarted) {
+                    workoutDuration = Provider.of<TimerService>(context, listen: false).seconds;
+                    Provider.of<TimerService>(context, listen: false).stopTimer();
+
+                    var rdp = Provider.of<RDP>(context, listen: false);
+
+                    // Todo: isMain이 true인 운동만 선택 / 메인 운동 선택 (첫 번째 메인 운동만 선택)
+                    Exercise mainExercise = selectedExercises.firstWhere((exercise) => exercise.isMain, orElse: () => selectedExercises.first);
+                    int index = selectedExercises.indexOf(mainExercise);
+
+                    List<Map<String, dynamic>> exerciseData = List.generate(exerciseSets[index]!.length, (i) => {
+                      'weight': exerciseSets[index]![i].weight,
+                      'mean_velocity': speedValuesProvider.getSpeedValues(mainExercise.name)?[i], // speedValues를 mean_velocity로 설정
+                    });
+
+                    Map<String, dynamic> reviewData = {
+                      'user_id': '00001',
+                      'test_regression_id': rdp.testRegressionId.toString(),
+                      'exercise_id': mainExercise.exerciseId,
+                      'name': mainExercise.name,
+                      'data': exerciseData,
+                    };
+
+                    print('Sending data to ReviewPage: $reviewData');
+
+                    Navigator.of(context)
+                        .pushReplacement(MaterialPageRoute(
+                      builder: (context) => ReviewPage(
+                        workoutDuration: workoutDuration,
+                        workoutData: workoutData,
+                        compareData: reviewData,
+                      ),
+                    ));
+                  } else {
+                    await getAll();
+                    await createRoutine(); // 루틴 생성 함수 호출
+                    _toggleWorkout();
+                  }
+                },
+                child: Text(isWorkoutStarted ? '운동 완료' : '운동 시작'),
+              ),
+              ElevatedButton(
+                onPressed: _printExercises,
+                child: Text('운동 목록 출력'),
+              ),
+            ],
+          )
               : ElevatedButton(
-                  onPressed: _selectExercises,
-                  child: Text('운동 선택'),
-                ),
+            onPressed: _selectExercises,
+            child: Text('운동 선택'),
+          ),
         ],
       ),
     );

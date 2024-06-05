@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter_project/components/my_button.dart';
 import 'package:flutter_project/components/my_textfield.dart';
 import '../../components/round_title.dart';
 import '../main_screens/main_page.dart';
 
-class LoginPage extends StatelessWidget {
-  LoginPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
+  bool isLoading = false;
 
-  void signUserIn(BuildContext context) {
-    // 사용자 입력 값 검증 예시 (실제로는 여기서 백엔드 인증 API를 호출해야 함)
+  void signUserIn(BuildContext context) async {
     String username = usernameController.text;
     String password = passwordController.text;
 
@@ -37,10 +44,59 @@ class LoginPage extends StatelessWidget {
       return;
     }
 
-    // 입력 값이 유효하다고 가정하고 Main Page로 이동
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => MainPage()),
+    // 로딩 상태를 true로 설정
+    setState(() {
+      isLoading = true;
+    });
+
+    // API 요청 보내기
+    try {
+      final response = await http.post(
+        Uri.parse('http://52.79.236.191:3000/api/workout/getAll'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode({'user_id': '00001'}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MainPage(data: data), // 데이터 전달
+          ),
+        );
+      } else {
+        showErrorDialog('Failed to load data: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      showErrorDialog('Error: $error');
+    } finally {
+      // 로딩 상태를 false로 설정
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('오류'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: Text('확인'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -55,7 +111,9 @@ class LoginPage extends StatelessWidget {
         backgroundColor: const Color(0xff0077FF),
         body: SafeArea(
           child: Center(
-            child: Column(
+            child: isLoading
+                ? CircularProgressIndicator() // 로딩 중일 때 표시할 위젯
+                : Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 100),

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_project/screens/sample_screens/select_page.dart';
+import 'package:flutter_project/screens/sample_screens/workout_selection_page.dart';
 import 'home_page.dart';
 import 'my_page.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final dynamic data;
+
+  const MainPage({super.key, required this.data});
 
   @override
   MainPageState createState() => MainPageState();
@@ -12,20 +14,22 @@ class MainPage extends StatefulWidget {
 
 class MainPageState extends State<MainPage> {
   int _currentIndex = 0;
-  final List<Widget> _pages = [
-    // Todo: Update pages
-    HomePage(),
-    HomePage(),
-    MyPage(),
-    MyPage(),
-  ];
+
+  List<Widget> _pages(dynamic data) {
+    return [
+      HomePage(data: data),
+      HomePage(data: data),
+      MyPage(),
+      MyPage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          _pages[_currentIndex],
+          _pages(widget.data)[_currentIndex],
           Positioned(
             bottom: 20,
             left: 0,
@@ -42,8 +46,7 @@ class MainPageState extends State<MainPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>
-                              SelectPage()), // Todo: UI 수정 작업 RoutinePage
+                          builder: (context) => SelectPage()), // Todo: UI 수정 작업 RoutinePage
                     );
                   },
                   backgroundColor: Color(0xff6BBEE2),

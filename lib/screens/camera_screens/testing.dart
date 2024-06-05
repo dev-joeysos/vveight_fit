@@ -6,29 +6,33 @@ import '../workout_screens/set_result_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class CameraPage extends StatefulWidget {
+import '../workout_screens/testing_result.dart';
+
+class Testing extends StatefulWidget {
   final List<CameraDescription> cameras;
   final String exerciseName;
   final String exerciseId;
   final double oneRM;
   final double threeRM;
-  final List<double> testWeights;
+  final List<double> realWeights;
+  final Map<String, dynamic>? rData; // 회귀 데이터 받기
 
-  const CameraPage({
+  const Testing({
     Key? key,
     required this.cameras,
     required this.exerciseName,
     required this.exerciseId,
     required this.oneRM,
     required this.threeRM,
-    required this.testWeights,
+    required this.realWeights,
+    this.rData,
   }) : super(key: key);
 
   @override
-  _CameraPageState createState() => _CameraPageState();
+  _TestingState createState() => _TestingState();
 }
 
-class _CameraPageState extends State<CameraPage> {
+class _TestingState extends State<Testing> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
   Timer? _timer;
@@ -38,9 +42,22 @@ class _CameraPageState extends State<CameraPage> {
   int _buttonPressCount = 0;
   bool _isComplete = false;
   bool _isFrontCamera = false;
-  List<double> speedValues = [0.96, 0.4, 0.3];
+  List<double> speedValues = [0.7, 0.3, 0.5]; // mean velocity
+  // Todo: 무게 별 속도 중단지점 알려주기
 
   List<double> maxSpeeds = [];
+
+  List<double> calculateStoppingSpeeds() {
+    if (widget.rData == null) {
+      return List.filled(widget.realWeights.length, 0.0);
+    }
+    double slope = double.parse(widget.rData?['slope'].toString() ?? '0.0');
+    double yIntercept = double.parse(widget.rData?['y_intercept'].toString() ?? '0.0');
+
+    return widget.realWeights.map((weight) {
+      return (slope * weight) + yIntercept;
+    }).toList();
+  }
 
   @override
   void initState() {
@@ -51,7 +68,8 @@ class _CameraPageState extends State<CameraPage> {
     );
     _initializeControllerFuture = _controller.initialize();
     _startTimer();
-    print('Test weights: ${widget.testWeights}');
+    print('Test weights: ${widget.realWeights}');
+    print('Received rData in Testing: ${widget.rData}');
   }
 
   void _startTimer() {
@@ -76,7 +94,7 @@ class _CameraPageState extends State<CameraPage> {
       _isFrontCamera = !_isFrontCamera;
       _controller = CameraController(
         widget.cameras.firstWhere((camera) =>
-            camera.lensDirection ==
+        camera.lensDirection ==
             (_isFrontCamera
                 ? CameraLensDirection.front
                 : CameraLensDirection.back)),
@@ -86,21 +104,21 @@ class _CameraPageState extends State<CameraPage> {
     });
   }
 
-  void _showSetResultPage(BuildContext context, int setNumber, int setTime,
+  void _showTestingResultPage(BuildContext context, int setNumber, int setTime,
       double weight, double maxSpeed) {
     maxSpeeds.add(maxSpeed);
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SetResultPage(
+        builder: (context) => TestingResult(
           setNumber: setNumber,
           exerciseName: widget.exerciseName,
           setTime: setTime,
-          testWeights: widget.testWeights,
+          realWeights: widget.realWeights,
           speedValues: maxSpeeds,
-          rSquared: 0.0,
-          slope: 0.0,
-          yIntercept: 0.0,
+          rSquared: double.parse(widget.rData?['r_squared'].toString() ?? '0.0'),
+          slope: double.parse(widget.rData?['slope'].toString() ?? '0.0'),
+          yIntercept: double.parse(widget.rData?['y_intercept'].toString() ?? '0.0'),
           exerciseId: widget.exerciseId,
           oneRM: widget.oneRM,
         ),
@@ -108,7 +126,7 @@ class _CameraPageState extends State<CameraPage> {
     ).then((_) {
       setState(() {
         _buttonPressCount++;
-        if (_buttonPressCount >= widget.testWeights.length) {
+        if (_buttonPressCount >= widget.realWeights.length) {
           _isComplete = true;
           _buttonText = '결과 보기';
         } else {
@@ -131,10 +149,10 @@ class _CameraPageState extends State<CameraPage> {
       });
       int setNumber = (_buttonPressCount ~/ 3) + 1;
       int repNumber = (_buttonPressCount % 3) + 1;
-      double currentWeight = widget.testWeights[setNumber - 1];
+      double currentWeight = widget.realWeights[setNumber - 1];
       double currentSpeed =
-          speedValues[(_buttonPressCount % 3) % speedValues.length];
-      _showSetResultPage(
+      speedValues[(_buttonPressCount % 3) % speedValues.length];
+      _showTestingResultPage(
           context, repNumber, _secondsPassed, currentWeight, currentSpeed);
     } else if (_buttonText == '결과 보기') {
       // Call the API and handle the response
@@ -143,17 +161,17 @@ class _CameraPageState extends State<CameraPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => SetResultPage(
+            builder: (context) => TestingResult(
               setNumber: 1,
               exerciseName: widget.exerciseName,
               setTime: _secondsPassed,
-              testWeights: widget.testWeights,
+              realWeights: widget.realWeights,
               speedValues: maxSpeeds,
-              rSquared: double.parse(regressionData['r_squared'].toString()),
-              slope: double.parse(regressionData['slope'].toString()),
-              yIntercept:
-                  double.parse(regressionData['y_intercept'].toString()),
+              rSquared: double.parse(widget.rData?['r_squared'].toString() ?? '0.0'),
+              slope: double.parse(widget.rData?['slope'].toString() ?? '0.0'),
+              yIntercept: double.parse(widget.rData?['y_intercept'].toString() ?? '0.0'),
               exerciseId: widget.exerciseId, oneRM: widget.oneRM,
+              rData: regressionData,
             ),
           ),
         );
@@ -161,7 +179,7 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
 
-  // Function to perform API call and return data
+// Function to perform API call and return data
   Future<Map<String, dynamic>?> postRegressionData() async {
     var url = Uri.parse('http://52.79.236.191:3000/api/vbt_core/regression');
     var response = await http.post(
@@ -172,11 +190,11 @@ class _CameraPageState extends State<CameraPage> {
         'name': widget.exerciseName,
         'type': 'Test',
         'data': List.generate(
-            widget.testWeights.length,
-            (index) => {
-                  'weight': widget.testWeights[index],
-                  'max_velocity': maxSpeeds[index],
-                })
+            widget.realWeights.length,
+                (index) => {
+              'weight': widget.realWeights[index],
+              'max_velocity': maxSpeeds[index],
+            })
       }),
     );
 
@@ -194,9 +212,10 @@ class _CameraPageState extends State<CameraPage> {
   Widget build(BuildContext context) {
     int minutes = _secondsPassed ~/ 60;
     int seconds = _secondsPassed % 60;
+    List<double> stoppingSpeeds = calculateStoppingSpeeds();
 
     return Scaffold(
-      appBar: AppBar(title: Text("카메라")),
+      appBar: AppBar(title: Text("testing")),
       body: SafeArea(
         child: FutureBuilder<void>(
           future: _initializeControllerFuture,
@@ -226,15 +245,15 @@ class _CameraPageState extends State<CameraPage> {
                                   fontWeight: FontWeight.bold)),
                           SizedBox(height: 20),
                           Text(
-                              '수행 무게: ${widget.testWeights[(_buttonPressCount % 3)]} kg',
+                              '수행 무게: ${widget.realWeights[(_buttonPressCount % 3)]} kg',
                               style:
-                                  TextStyle(color: Colors.white, fontSize: 20)),
+                              TextStyle(color: Colors.white, fontSize: 20)),
                           if (_isMeasuring)
                             Text(
-                                "${((_buttonPressCount % 3) + 1)}세트 측정 중입니다.\n최대 속력: ${speedValues[(_buttonPressCount % 3) % speedValues.length].toStringAsFixed(2)} m/s",
+                                "${((_buttonPressCount % 3) + 1)}세트 측정 중입니다.\n평균 속도: ${speedValues[(_buttonPressCount % 3) % speedValues.length].toStringAsFixed(2)} m/s\n중단 속도: ${stoppingSpeeds[(_buttonPressCount % 3)].toStringAsFixed(2)} m/s",
                                 textAlign: TextAlign.center,
                                 style:
-                                    TextStyle(fontSize: 20, color: Colors.red)),
+                                TextStyle(fontSize: 20, color: Colors.blue)),
                           if (_isComplete)
                             Text("측정이 완료되었습니다!",
                                 textAlign: TextAlign.center,
@@ -250,10 +269,10 @@ class _CameraPageState extends State<CameraPage> {
                     ),
                   ),
                   Positioned(
-                    bottom: 250,
+                    bottom: 300,
                     child: Container(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: Colors.black45,
                         borderRadius: BorderRadius.circular(10),

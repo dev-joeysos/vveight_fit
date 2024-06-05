@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../provider/workout_manager.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -12,6 +14,7 @@ class MyPage extends StatefulWidget {
 
 class MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
   TabController? _tabController;
+  String _response = ''; // 응답 결과를 저장할 변수
 
   @override
   void initState() {
@@ -25,15 +28,45 @@ class MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  // HTTP 요청을 보내는 함수
+  Future<void> _sendRequest() async {
+    var url = Uri.parse('http://52.79.236.191:3000/api/workout/compare');
+    var headers = {'Content-Type': 'application/json'};
+    var body = json.encode({
+      'user_id': '00001',
+      'test_regression_id': '00122',
+      'exercise_id': '00001',
+      'name': 'Bench Press',
+      'data': [
+        {'weight': 75, 'mean_velocity': 0.45},
+        {'weight': 80, 'mean_velocity': 0.33},
+        {'weight': 90, 'mean_velocity': 0.28}
+      ]
+    });
+
+    try {
+      var response = await http.post(url, headers: headers, body: body);
+      if (response.statusCode == 200) {
+        setState(() {
+          _response = response.body; // 응답 결과를 상태로 저장
+        });
+      } else {
+        setState(() {
+          _response = 'Failed to load data: ${response.reasonPhrase}';
+        });
+      }
+    } catch (error) {
+      setState(() {
+        _response = 'Error: $error';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final workoutManager = Provider.of<WorkoutManager>(context);
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text('베이트핏', style: TextStyle(color: Colors.white)),
-      //   backgroundColor: Colors.blue,
-      // ),
       body: SafeArea(
         child: Column(
           children: <Widget>[
@@ -67,7 +100,7 @@ class MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                   Center(
                     child: workoutManager.imageFile != null
                         ? Image.file(File(workoutManager.imageFile!.path),
-                            width: 300, height: 300)
+                        width: 300, height: 300)
                         : Text('사진을 기록해주세요', style: TextStyle(fontSize: 20)),
                   ),
                   Center(
@@ -84,33 +117,44 @@ class MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                               : '운동 후기를 기록해주세요',
                           style: TextStyle(fontSize: 20),
                         ),
+                        SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: _sendRequest,
+                          child: Text('요청 보내기'),
+                        ),
+                        SizedBox(height: 20),
+                        Text(
+                          '응답 결과:',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        Text(_response, style: TextStyle(fontSize: 16)),
                       ],
                     ),
                   ),
                   workoutManager.workoutData != null
                       ? ListView(
-                          children: workoutManager
-                              .workoutData!.exerciseDetails.entries
-                              .map((entry) {
-                            return ExpansionTile(
-                              title: Text(
-                                entry.key,
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              children: List<Widget>.generate(
-                                  entry.value.sessionCounts.length, (index) {
-                                return ListTile(
-                                  title: Text('${index + 1} 세트'),
-                                  subtitle: Text(
-                                      '${entry.value.weights[index].toStringAsFixed(0)} kg, ${entry.value.sessionCounts[index]} reps'),
-                                );
-                              }),
-                            );
-                          }).toList(),
-                        )
+                    children: workoutManager
+                        .workoutData!.exerciseDetails.entries
+                        .map((entry) {
+                      return ExpansionTile(
+                        title: Text(
+                          entry.key,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        children: List<Widget>.generate(
+                            entry.value.sessionCounts.length, (index) {
+                          return ListTile(
+                            title: Text('${index + 1} 세트'),
+                            subtitle: Text(
+                                '${entry.value.weights[index].toStringAsFixed(0)} kg, ${entry.value.sessionCounts[index]} reps'),
+                          );
+                        }),
+                      );
+                    }).toList(),
+                  )
                       : Center(
-                          child: Text('운동 루틴을 기록해주세요',
-                              style: TextStyle(fontSize: 20))),
+                      child: Text('운동 루틴을 기록해주세요',
+                          style: TextStyle(fontSize: 20))),
                 ],
               ),
             ),

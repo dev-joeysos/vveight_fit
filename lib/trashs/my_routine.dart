@@ -64,21 +64,21 @@ class _MyRoutineState extends State<MyRoutine> {
                         color: Colors.black,
                       ),
                     ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => GuidePage(exerciseName: exerciseName, exerciseId: '',)),
-                      ),
-                      child: const Text('시작'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF123364),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
+                    // ElevatedButton(
+                    //   onPressed: () => Navigator.push(
+                    //     context,
+                    //     MaterialPageRoute(builder: (context) => GuidePage(exerciseName: exerciseName, exerciseId: '', weight: 0, reps: 0,)),
+                    //   ),
+                    //   child: const Text('시작'),
+                    //   style: ElevatedButton.styleFrom(
+                    //     backgroundColor: Colors.white,
+                    //     foregroundColor: const Color(0xFF123364),
+                    //     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(20),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
                 const Divider(color: Colors.white, thickness: 1.2),

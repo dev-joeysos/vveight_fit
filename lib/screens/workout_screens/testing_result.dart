@@ -2,58 +2,86 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:provider/provider.dart';
+import '../../provider/isUpdated.dart';
+import '../../provider/speed_values.dart';
 
-class SetResultPage extends StatelessWidget {
+class TestingResult extends StatefulWidget {
   final int setNumber;
   final String exerciseId;
   final String exerciseName;
   final int setTime;
-  final List<double> testWeights;
+  final List<double> realWeights;
   final List<double> speedValues;
   final double rSquared;
   final double slope;
   final double yIntercept;
   final double oneRM;
+  final Map<String, dynamic>? rData;
 
-  SetResultPage({
-    Key? key,
+  TestingResult({
+    super.key,
     required this.setNumber,
     required this.exerciseId,
     required this.exerciseName,
     required this.setTime,
-    required this.testWeights,
+    required this.realWeights,
     required this.speedValues,
     required this.rSquared,
     required this.slope,
     required this.yIntercept,
     required this.oneRM,
-  }) : super(key: key);
+    this.rData,
+  });
 
-  List<FlSpot> _getLinearLinePoints() {
+  @override
+  State<TestingResult> createState() => _TestingResultState();
+}
+
+class _TestingResultState extends State<TestingResult> {
+  bool _providerUpdated = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_providerUpdated && widget.rData != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Provider.of<SpeedValuesProvider>(context, listen: false)
+            .updateSpeedValues(widget.exerciseName, widget.speedValues);
+      });
+      _providerUpdated = true;
+    }
+  }
+
+  List<FlSpot> _getLinearLinePoints(double slope, double yIntercept) {
     List<FlSpot> linePoints = [];
-    for (int i = 0; i < testWeights.length; i++) {
-      double x = testWeights[i].toDouble();
+    for (int i = 0; i < widget.realWeights.length; i++) {
+      double x = widget.realWeights[i].toDouble();
       double y = slope * x + yIntercept;
       linePoints.add(FlSpot(x, y));
     }
     return linePoints;
   }
 
+  // Todo: 여기서 저장하고 나면, routine_page로 돌아갔을 때 업데이트 성공적으로 저장됨. 그때 저장하는 regression_id를 proivder로 써도 되고
+  // 아무튼 RoutinePage에서 운동 완료 눌렀을 때 workout/save 해야 함.
   Future<void> _saveRegressionData(BuildContext context) async {
     const url = 'http://52.79.236.191:3000/api/vbt_core/save';
     final body = {
       'user_id': '00001',
-      'exercise_id': exerciseId,
-      'name': exerciseName,
+      'exercise_id': widget.exerciseId,
+      'name': widget.exerciseName,
       'regression': {
-        'r_squared': rSquared,
-        'slope': slope,
-        'y_intercept': yIntercept,
-        'type': 'Test',
-        'one_rep_max': oneRM,
-      },
+        'one_rep_max': widget.oneRM.toString(),
+        'r_squared': widget.rSquared.toString(),
+        'slope': widget.slope.toString(),
+        'y_intercept': widget.yIntercept.toString(),
+        'type': 'Workout'
+      }
     };
 
+    print('Saving regression data: $body');
+    print('Real weights: ${widget.realWeights}');
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -64,27 +92,47 @@ class SetResultPage extends StatelessWidget {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final regressionId = responseData['regression_id'];
-        // Handle the received regression_id as needed
         print('Saved regression data with ID: $regressionId');
-        Navigator.of(context).pop({'exerciseName': exerciseName, 'regressionId': regressionId});
+        Provider.of<IsUpdated>(context, listen: false).setUpdated(true);
+        Navigator.of(context).pop({
+          'exerciseName': widget.exerciseName,
+          'regressionId': regressionId
+        });
       } else {
-        // Handle error response
         print('Failed to save regression data: ${response.reasonPhrase}');
       }
     } catch (error) {
-      // Handle any exceptions
       print('Error saving regression data: $error');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    List<FlSpot> linearLinePoints = _getLinearLinePoints();
-    bool hasRegressionData = rSquared != 0 || slope != 0 || yIntercept != 0;
+    List<FlSpot> linearLinePoints =
+        _getLinearLinePoints(widget.slope, widget.yIntercept);
+    List<FlSpot>? rDataLinePoints;
+    if (widget.rData != null) {
+      rDataLinePoints = _getLinearLinePoints(
+          double.parse(widget.rData?['slope'].toString() ?? '0.0'),
+          double.parse(widget.rData?['y_intercept'].toString() ?? '0.0'));
+    }
+    bool hasRegressionData =
+        widget.rSquared != 0 || widget.slope != 0 || widget.yIntercept != 0;
+    bool hasRData = widget.rData != null;
+
+    double currentRSquared = hasRData
+        ? double.parse(widget.rData?['r_squared'].toString() ?? '0.0')
+        : widget.rSquared;
+    double currentSlope = hasRData
+        ? double.parse(widget.rData?['slope'].toString() ?? '0.0')
+        : widget.slope;
+    double currentYIntercept = hasRData
+        ? double.parse(widget.rData?['y_intercept'].toString() ?? '0.0')
+        : widget.yIntercept;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("세트 결과"),
+        title: Text("Testing Result"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -93,31 +141,33 @@ class SetResultPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                hasRegressionData ? '측정 결과' : '$exerciseName - 세트 $setNumber 결과',
+                hasRegressionData
+                    ? '측정 결과'
+                    : '${widget.exerciseName} - 세트 ${widget.setNumber} 결과',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
               Text(
-                '측정 시간: ${setTime}초',
+                '측정 시간: ${widget.setTime}초',
                 style: TextStyle(fontSize: 18),
               ),
               SizedBox(height: 10),
               Text(
-                '최대 속력: ${speedValues.last.toStringAsFixed(2)} m/s',
+                '펑균 속도: ${widget.speedValues.last.toStringAsFixed(2)} m/s',
                 style: TextStyle(fontSize: 18, color: Colors.red),
               ),
               SizedBox(height: 10),
               if (hasRegressionData) ...[
                 Text(
-                  '편차: ${rSquared.toStringAsFixed(5)}',
+                  '편차: ${currentRSquared.toStringAsFixed(5)}',
                   style: TextStyle(fontSize: 18, color: Colors.blue),
                 ),
                 Text(
-                  '기울기: ${slope.toStringAsFixed(5)}',
+                  '기울기: ${currentSlope.toStringAsFixed(5)}',
                   style: TextStyle(fontSize: 18, color: Colors.blue),
                 ),
                 Text(
-                  'y 절편: ${yIntercept.toStringAsFixed(5)}',
+                  'y 절편: ${currentYIntercept.toStringAsFixed(5)}',
                   style: TextStyle(fontSize: 18, color: Colors.blue),
                 ),
                 SizedBox(height: 20),
@@ -129,22 +179,30 @@ class SetResultPage extends StatelessWidget {
                     ScatterChart(
                       ScatterChartData(
                         scatterSpots: [
-                          for (int i = 0; i < speedValues.length; i++)
+                          for (int i = 0; i < widget.speedValues.length; i++)
                             ScatterSpot(
-                              testWeights[i].toDouble(),
-                              speedValues[i],
+                              widget.realWeights[i].toDouble(),
+                              widget.speedValues[i],
                               dotPainter: FlDotCirclePainter(
                                 radius: 8,
-                                color: Color(0xff143365),
+                                color: Color(0xff6BBEE2),
                                 strokeWidth: 2,
                                 strokeColor: Colors.black,
                               ),
                             ),
                         ],
-                        minX: (testWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
-                        maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
+                        minX: (widget.realWeights
+                                    .reduce((a, b) => a < b ? a : b) -
+                                10)
+                            .toDouble(),
+                        maxX: (widget.realWeights
+                                    .reduce((a, b) => a > b ? a : b) +
+                                10)
+                            .toDouble(),
                         minY: 0,
-                        maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
+                        maxY: (widget.speedValues
+                                .reduce((a, b) => a > b ? a : b) +
+                            0.4),
                         backgroundColor: Colors.grey[200],
                         gridData: FlGridData(
                           show: true,
@@ -193,11 +251,27 @@ class SetResultPage extends StatelessWidget {
                               barWidth: 5,
                               dotData: FlDotData(show: false),
                             ),
+                            if (rDataLinePoints != null)
+                              LineChartBarData(
+                                spots: rDataLinePoints,
+                                isCurved: false,
+                                color: Color(0xff6BBEE2),
+                                barWidth: 5,
+                                dotData: FlDotData(show: false),
+                              ),
                           ],
-                          minX: (testWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
-                          maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
+                          minX: (widget.realWeights
+                                      .reduce((a, b) => a < b ? a : b) -
+                                  10)
+                              .toDouble(),
+                          maxX: (widget.realWeights
+                                      .reduce((a, b) => a > b ? a : b) +
+                                  10)
+                              .toDouble(),
                           minY: 0,
-                          maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
+                          maxY: (widget.speedValues
+                                  .reduce((a, b) => a > b ? a : b) +
+                              0.4),
                           gridData: FlGridData(
                             show: true,
                             drawVerticalLine: true,
@@ -240,13 +314,14 @@ class SetResultPage extends StatelessWidget {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  if (hasRegressionData) {
-                    _saveRegressionData(context);
+                  if (hasRData) {
+                    _saveRegressionData(
+                        context); // Save new measured data to server
                   } else {
                     Navigator.of(context).pop();
                   }
                 },
-                child: Text(hasRegressionData ? '저장하기' : '창닫기'),
+                child: Text(hasRData ? '저장하기' : '창닫기'),
               ),
             ],
           ),

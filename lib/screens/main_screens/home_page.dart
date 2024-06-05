@@ -1,9 +1,14 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final dynamic data;
+
+  const HomePage({super.key, required this.data});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -11,58 +16,86 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   DateTime? _selectedDay;
-  final Random _random = Random();
+  DateTime _focusedDay = DateTime.now();
   String _imageAsset = '';
+  final Map<DateTime, List<dynamic>> _events = {};
+  Map<String, dynamic>? _workoutDetails;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
-    _updateScoreImage();
+    _updateImageBasedOnStatus(_selectedDay!);
+    _prepareEventMap();
+    print('Received data: ${widget.data}');
+  }
+
+  void _prepareEventMap() {
+    for (var workout in widget.data) {
+      DateTime workoutDate = DateTime.parse(workout['date']);
+      workoutDate =
+          DateTime(workoutDate.year, workoutDate.month, workoutDate.day);
+      if (_events[workoutDate] == null) {
+        _events[workoutDate] = [];
+      }
+      _events[workoutDate]!.add(workout);
+    }
+
+    // 날짜별로 이벤트를 정렬하고 가장 최근 이벤트만 남김
+    _events.forEach((key, value) {
+      value.sort((a, b) =>
+          DateTime.parse(b['date']).compareTo(DateTime.parse(a['date'])));
+      _events[key] = [value.first];
+    });
+  }
+
+  Future<void> _fetchWorkoutDetails(int workoutId) async {
+    const url = 'http://52.79.236.191:3000/api/workout/getDetails';
+    final body = json.encode({
+      'user_id': '00001',
+      'workout_id': workoutId,
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        setState(() {
+          _workoutDetails = responseData as Map<String, dynamic>?;
+        });
+        print('Received workout details: $responseData');
+      } else {
+        print('Failed to fetch workout details: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      print('Error fetching workout details: $error');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Row(
-      //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      //     children: [
-      //       Text(
-      //         '베이트핏',
-      //         style: TextStyle(color: Colors.white),
-      //       ),
-      //     ],
-      //   ),
-      //   actions: <Widget>[
-      //     IconButton(
-      //       icon: Icon(
-      //         Icons.settings,
-      //         color: Colors.white,
-      //       ),
-      //       onPressed: () {
-      //         // 설정 아이콘 클릭 시 수행할 작업
-      //       },
-      //     ),
-      //   ],
-      //   backgroundColor: Colors.blue,
-      // ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Center(
             child: Column(
               children: [
-                const SizedBox(height: 15),
+                const SizedBox(height: 24),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 30),
+                    padding: const EdgeInsets.only(left: 24),
                     child: Container(
                       padding: EdgeInsets.all(10.0),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(10.0),
+                        // border: Border.all(color: Colors.grey),
+                        // borderRadius: BorderRadius.circular(10.0),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -70,21 +103,21 @@ class _HomePageState extends State<HomePage> {
                           ClipOval(
                             child: Image.asset(
                               'assets/images/puang_done.jpeg',
-                              width: 60,
-                              height: 60,
+                              width: 64,
+                              height: 64,
                               fit: BoxFit.cover,
                             ),
                           ),
-                          SizedBox(width: 15),
+                          SizedBox(width: 16),
                           Flexible(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '안녕하세요 푸앙님',
+                                  '안녕하세요 푸앙님!',
                                   style: TextStyle(
                                     color: Colors.black,
-                                    fontSize: 15,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -104,22 +137,164 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
-                if (_imageAsset.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black, width: 1.0),
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Image.asset(
-                        _imageAsset,
-                        height: 200,
-                      ),
+                const SizedBox(height: 5),
+                if (_workoutDetails != null)
+                  SizedBox(
+                    height: 300, // Adjust the height as needed
+                    child: PageView(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Image.asset(
+                            _imageAsset,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              if (_workoutDetails?['routine_id'] == null)
+                                Text(
+                                  ('LV 프로필'),
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              else
+                                Text(
+                                  (_workoutDetails?['exercise_id']),
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              SizedBox(height: 12),
+                              SizedBox(
+                                  height: 210,
+                                  width: 300,
+                                  child: LineChart(
+                                    LineChartData(
+                                      minY: 0,
+                                      maxY: 1.0,
+                                      lineBarsData: [
+                                        if (_workoutDetails![
+                                                'workout_regression'] !=
+                                            false)
+                                          LineChartBarData(
+                                            spots: _getLineSpots(
+                                                _workoutDetails![
+                                                    'workout_regression']),
+                                            isCurved: false,
+                                            color: Color(0xff143365),
+                                            barWidth: 5,
+                                            isStrokeCapRound: false,
+                                            belowBarData:
+                                                BarAreaData(show: false),
+                                            dotData: FlDotData(
+                                              show: false,
+                                            ),
+                                          ),
+                                        LineChartBarData(
+                                          spots: _getLineSpots(_workoutDetails![
+                                              'test_regression']),
+                                          isCurved: false,
+                                          color: Color(0xff6BBEE2),
+                                          barWidth: 5,
+                                          dashArray: [10, 8],
+                                          isStrokeCapRound: false,
+                                          belowBarData:
+                                              BarAreaData(show: false),
+                                          dotData: FlDotData(
+                                            show: false,
+                                          ),
+                                        ),
+                                      ],
+                                      titlesData: FlTitlesData(
+                                        leftTitles: AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: true,
+                                            interval: 0.2,
+                                            getTitlesWidget: (value, meta) {
+                                              if (value == 0) {
+                                                return Container(); // Hide the left bottom 0.0 value
+                                              }
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                    right: 4.0),
+                                                // Add padding to create a gap
+                                                child: Text(
+                                                  value.toStringAsFixed(1),
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors
+                                                          .grey), // Set y-axis text color to gray
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        bottomTitles: AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: true,
+                                            getTitlesWidget: (value, meta) {
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 4.0),
+                                                // Adjust the padding to increase the gap
+                                                child: Text(
+                                                  '${value.toInt()}kg',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight
+                                                        .bold, // Make the text bold
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        rightTitles: AxisTitles(
+                                          sideTitles:
+                                              SideTitles(showTitles: false),
+                                        ),
+                                        topTitles: AxisTitles(
+                                          sideTitles:
+                                              SideTitles(showTitles: false),
+                                        ),
+                                      ),
+                                      gridData: FlGridData(
+                                        show: true,
+                                        horizontalInterval: 0.2,
+                                        drawVerticalLine: false,
+                                      ),
+                                      borderData: FlBorderData(
+                                        show:
+                                            false, // Hide the border around the chart
+                                      ),
+                                    ),
+                                  )),
+                            ],
+                          ),
+                        ),
+                        if (_imageAsset.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: Container(
+                              // decoration: BoxDecoration(
+                              //   border:
+                              //       Border.all(color: Colors.black, width: 1.0),
+                              //   borderRadius: BorderRadius.circular(12.0),
+                              // ),
+                              child: Image.asset(
+                                _imageAsset,
+                                height: 150,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                const SizedBox(height: 30),
                 Container(
                   padding: EdgeInsets.all(8.0),
                   decoration: BoxDecoration(
@@ -128,7 +303,7 @@ class _HomePageState extends State<HomePage> {
                   child: SizedBox(
                     child: TableCalendar(
                       locale: 'ko_KR',
-                      focusedDay: DateTime.now(),
+                      focusedDay: _focusedDay,
                       firstDay: DateTime(2020),
                       lastDay: DateTime(2030),
                       headerStyle: HeaderStyle(
@@ -146,13 +321,13 @@ class _HomePageState extends State<HomePage> {
                           fontWeight: FontWeight.bold,
                           color: Colors.grey,
                           height: 0,
-                        ), // Set height to 0 to hide the text
+                        ),
                         weekendStyle: TextStyle(
                           fontSize: 12.0,
                           fontWeight: FontWeight.bold,
                           color: Colors.grey,
                           height: 0,
-                        ), // Set height to 0 to hide the text
+                        ),
                       ),
                       calendarStyle: CalendarStyle(
                         defaultTextStyle: TextStyle(
@@ -179,48 +354,71 @@ class _HomePageState extends State<HomePage> {
                           color: Color(0xff1A3263),
                         ),
                         selectedDecoration: BoxDecoration(
-                          color: Color(0xff6AC7F0),
+                          shape: BoxShape.circle,
+                          color: Colors.black, // 검은색 원으로 선택된 날짜 표시
                         ),
                       ),
                       rowHeight: 36.0,
                       onDaySelected: (selectedDay, focusedDay) {
                         setState(() {
                           _selectedDay = selectedDay;
-                          _updateScoreImage();
+                          _focusedDay = focusedDay;
+                          _updateImageBasedOnStatus(selectedDay);
                         });
+                        _showWorkoutInfo(selectedDay);
                       },
                       calendarBuilders: CalendarBuilders(
                         defaultBuilder: (context, day, focusedDay) {
+                          bool isEventDay = _events[
+                                      DateTime(day.year, day.month, day.day)] !=
+                                  null &&
+                              _events[DateTime(day.year, day.month, day.day)]!
+                                  .isNotEmpty;
                           return Center(
                             child: Text(
                               '${day.day}',
                               style: TextStyle(
                                 fontSize: 16.0,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xff3168A3),
+                                color:
+                                    isEventDay ? Colors.red : Color(0xff3168A3),
                               ),
                             ),
                           );
                         },
                         todayBuilder: (context, day, focusedDay) {
                           return Center(
-                            child: Text(
-                              '${day.day}',
-                              style: TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xff6AC7F0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xff1A3263),
+                              ),
+                              padding: const EdgeInsets.all(6.0),
+                              child: Text(
+                                '${day.day}',
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xff6AC7F0),
+                                ),
                               ),
                             ),
                           );
                         },
                         selectedBuilder: (context, day, focusedDay) {
                           return Center(
-                            child: Text(
-                              '${day.day}',
-                              style: TextStyle(
-                                fontSize: 16.0,
-                                color: Colors.white,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.black, // 검은색 원으로 선택된 날짜 표시
+                              ),
+                              padding: const EdgeInsets.all(6.0),
+                              child: Text(
+                                '${day.day}',
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           );
@@ -238,6 +436,11 @@ class _HomePageState extends State<HomePage> {
                           );
                         },
                       ),
+                      eventLoader: (day) {
+                        return _events[
+                                DateTime(day.year, day.month, day.day)] ??
+                            [];
+                      },
                     ),
                   ),
                 ),
@@ -249,14 +452,51 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _updateScoreImage() {
-    int randomScore = _random.nextInt(100);
-    if (randomScore < 50) {
-      _imageAsset = 'assets/images/p_worst.png';
-    } else if (randomScore >= 50 && randomScore < 70) {
-      _imageAsset = 'assets/images/p_default.png';
+  List<FlSpot> _getLineSpots(Map<String, dynamic> regressionData) {
+    double slope = double.parse(regressionData['slope'].toString());
+    double yIntercept = double.parse(regressionData['y_intercept'].toString());
+    List<FlSpot> spots = [];
+    for (int i = 50; i <= 100; i += 5) {
+      double x = i.toDouble();
+      double y = slope * x + yIntercept;
+      spots.add(FlSpot(x, y));
+    }
+    return spots;
+  }
+
+  void _updateImageBasedOnStatus(DateTime selectedDay) {
+    DateTime dateOnly =
+        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    if (_events[dateOnly] != null && _events[dateOnly]!.isNotEmpty) {
+      var status = _events[dateOnly]![0]['status'];
+      switch (status) {
+        case 'ready':
+          _imageAsset = 'assets/images/p_training/ready.jpeg';
+          break;
+        case 'burning':
+          _imageAsset = 'assets/images/p_training/burning.jpeg';
+          break;
+        case 'exhausted':
+          _imageAsset = 'assets/images/p_training/exhausted.jpeg';
+          break;
+        default:
+          _imageAsset = 'assets/images/p_training/ready.jpeg';
+      }
     } else {
-      _imageAsset = 'assets/images/p_good.png';
+      _imageAsset = 'assets/images/p_default.png';
+    }
+  }
+
+  void _showWorkoutInfo(DateTime selectedDay) {
+    DateTime dateOnly =
+        DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    if (_events[dateOnly] != null && _events[dateOnly]!.isNotEmpty) {
+      var workout = _events[dateOnly]!.first; // 가장 최근의 운동 정보를 사용
+      print(
+          'Date: $dateOnly, Workout ID: ${workout['workout_id']}, Status: ${workout['status']}');
+      _fetchWorkoutDetails(workout['workout_id']);
+    } else {
+      print('No workouts on this date.');
     }
   }
 }

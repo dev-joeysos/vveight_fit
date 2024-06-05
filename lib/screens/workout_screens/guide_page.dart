@@ -1,22 +1,43 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_project/screens/workout_screens/recommend_page.dart';
+import 'package:flutter_project/screens/camera_screens/workCam_page.dart';
 import '../camera_screens/camera_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_project/screens/workout_screens/recommend_page.dart';
+import 'package:flutter_project/screens/workout_screens/routine_page.dart';
+import '../camera_screens/testing.dart';
 import '../main_screens/my_page.dart';
-import 'package:http/http.dart' as http; // HTTP 패키지 추가
-import 'dart:convert'; // JSON 인코딩 및 디코딩을 위한 패키지 추가
 
 class GuidePage extends StatefulWidget {
   final String exerciseId;
   final String exerciseName;
+  final double weight;
+  final int reps;
+  final List<double> realWeights; // 진짜 운동용 무게 받기 _ 불러온 루틴 데이터의 최신 운동수행 무게
+  final Map<String, dynamic>? regressionData; // 회귀 데이터 받기
 
-  const GuidePage({Key? key, required this.exerciseId, required this.exerciseName}) : super(key: key);
+  const GuidePage({
+    Key? key,
+    required this.exerciseId,
+    required this.exerciseName,
+    required this.weight,
+    required this.reps,
+    required this.realWeights,
+    this.regressionData,
+  }) : super(key: key);
 
   @override
   _GuidePageState createState() => _GuidePageState();
 }
 
 class _GuidePageState extends State<GuidePage> {
+  @override
+  void initState() {
+    super.initState();
+    print('Initial realWeights: ${widget.realWeights}');
+  }
+
   String? errorMessage; // For displaying error messages
   bool isStartExercise = false; // 운동 시작 버튼을 클릭했는지 확인하는 플래그
 
@@ -53,15 +74,16 @@ class _GuidePageState extends State<GuidePage> {
         'exercise_id': widget.exerciseName,
         'weight': weightValue,
         'reps': repsValue,
-        'units': selectedPlates.map((plate) => double.parse(plate.replaceAll('kg', ''))).toList(),
+        'units': selectedPlates
+            .map((plate) => double.parse(plate.replaceAll('kg', '')))
+            .toList(),
       };
 
       double oneRM = 0.0;
       double threeRM = 0.0;
-      List<int> testWeights = [];
+      List<double> testWeights = [];
 
       try {
-        // API 호출
         var response = await http.post(
           Uri.parse('http://52.79.236.191:3000/api/vbt_core/base_weights'),
           headers: {'Content-Type': 'application/json'},
@@ -76,7 +98,7 @@ class _GuidePageState extends State<GuidePage> {
           // API 응답에서 1RM 및 3RM 값을 가져옴
           oneRM = responseData['one_rep_max'].toDouble();
           threeRM = responseData['three_rep_max'].toDouble();
-          testWeights = List<int>.from(responseData['test_weights']);
+          testWeights = List<double>.from(responseData['test_weights'].map((weight) => weight.toDouble()));
         } else {
           // 에러 발생 시
           print('Failed to load data: ${response.statusCode}');
@@ -154,8 +176,7 @@ class _GuidePageState extends State<GuidePage> {
           ),
           actions: <Widget>[
             TextButton(
-              onPressed:
-              validateInput,
+              onPressed: validateInput,
               child: Text('확인'), // Check inputs when this button is pressed
             ),
             TextButton(
@@ -175,29 +196,41 @@ class _GuidePageState extends State<GuidePage> {
   }
 
   // Function to display 1RM and 3RM results and navigate to CameraPage
-  void showResultsDialog(BuildContext context, double oneRM, double threeRM, List<int> testWeights) {
+  void showResultsDialog(BuildContext context, double oneRM, double threeRM,
+      List<double> testWeights) {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('계산 결과'),
           content: Text(
-              '1RM: ${oneRM.toStringAsFixed(0)} kg\n3RM: ${threeRM.toStringAsFixed(0)} kg'),
+              '1RM: ${oneRM.toStringAsFixed(0)} kg\n3RM: ${threeRM.toStringAsFixed(0)} kg\n'),
           actions: <Widget>[
             TextButton(
               child: Text('모델 생성'),
               onPressed: () async {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
                 if (isStartExercise) {
+                  final cameras = await availableCameras();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => RecommendPage(
-                        oneRM: oneRM,
-                        exerciseName: widget.exerciseName,
+                        // builder: (context) => WorkCamPage(
+                        //       weights: [widget.weight, widget.weight, widget.weight],
+                        //       exerciseName: widget.exerciseName,
+                        //       regressionData: widget.regressionData,
+                        //     )),
+                      builder: (context) => Testing(
+                          cameras: cameras,
+                          exerciseName: widget.exerciseName,
+                          exerciseId: widget.exerciseId,
+                          oneRM: oneRM,
+                          threeRM: threeRM,
+                          realWeights: widget.realWeights,
+                          rData: widget.regressionData,
                       ),
                     ),
-                  );
+                );
                 } else {
                   final cameras = await availableCameras();
                   Navigator.pushReplacement(
@@ -238,7 +271,7 @@ class _GuidePageState extends State<GuidePage> {
                 SizedBox(height: 5),
                 Text("삼각대",
                     style:
-                    TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 5),
                 Text("정확한 촬영을 위해 삼각대를 준비해주세요."),
                 SizedBox(height: 20),
@@ -246,7 +279,7 @@ class _GuidePageState extends State<GuidePage> {
                 SizedBox(height: 5),
                 Text("바른 자세",
                     style:
-                    TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 5),
                 Text("최대한 바른 자세로 운동해주세요."),
                 SizedBox(height: 20),
@@ -254,7 +287,7 @@ class _GuidePageState extends State<GuidePage> {
                 SizedBox(height: 5),
                 Text("바벨 제한",
                     style:
-                    TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 5),
                 Text("정확한 속도 측정을 위해 주변 바벨을 최대한 치워주세요."),
                 SizedBox(height: 20),

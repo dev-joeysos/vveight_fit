@@ -147,38 +147,38 @@ class _LibraryPageState extends State<LibraryPage> {
                   ),
                 ),
 
-                SizedBox(height: 10),
+                // SizedBox(height: 10),
                 // 운동 태그 선택
-                Wrap(
-                  spacing: 8.0, // 버튼 사이의 공간
-                  children: ['모두', '가슴', '등', '어깨'].map((tag) {
-                    bool isSelected = (tag == '모두' && selectedTag == null) ||
-                        tag == selectedTag;
-                    return ElevatedButton(
-                      onPressed: () => setState(() {
-                        selectedTag = tag == '모두' ? null : tag;
-                      }),
-                      child: Text(tag),
-                      // 선택된 버튼에 따라 스타일을 동적으로 변경
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isSelected ? Colors.blue : Colors.white,
-                        // 선택 상태에 따라 배경색 변경
-                        foregroundColor:
-                            isSelected ? Colors.white : Colors.black,
-                        // 선택 상태에 따라 텍스트색 변경
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        // 버튼 내부의 패딩
-                        shape: RoundedRectangleBorder(
-                          // 버튼의 모양을 정의
-                          borderRadius:
-                              BorderRadius.circular(20), // 버튼의 모서리를 둥글게
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                // Wrap(
+                //   spacing: 8.0, // 버튼 사이의 공간
+                //   children: ['모두', '가슴', '등', '어깨'].map((tag) {
+                //     bool isSelected = (tag == '모두' && selectedTag == null) ||
+                //         tag == selectedTag;
+                //     return ElevatedButton(
+                //       onPressed: () => setState(() {
+                //         selectedTag = tag == '모두' ? null : tag;
+                //       }),
+                //       child: Text(tag),
+                //       // 선택된 버튼에 따라 스타일을 동적으로 변경
+                //       style: ElevatedButton.styleFrom(
+                //         backgroundColor:
+                //             isSelected ? Colors.blue : Colors.white,
+                //         // 선택 상태에 따라 배경색 변경
+                //         foregroundColor:
+                //             isSelected ? Colors.white : Colors.black,
+                //         // 선택 상태에 따라 텍스트색 변경
+                //         padding:
+                //             EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                //         // 버튼 내부의 패딩
+                //         shape: RoundedRectangleBorder(
+                //           // 버튼의 모양을 정의
+                //           borderRadius:
+                //               BorderRadius.circular(20), // 버튼의 모서리를 둥글게
+                //         ),
+                //       ),
+                //     );
+                //   }).toList(),
+                // ),
 
                 SizedBox(height: 10),
                 Expanded(

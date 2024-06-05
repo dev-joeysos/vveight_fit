@@ -1,16 +1,24 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../provider/workout_data.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
+import '../../provider/workout_data.dart';
 import '../../provider/workout_manager.dart';
 
 class ReviewPage extends StatefulWidget {
-  final int workoutDuration;  // 운동 시간을 초 단위로 받습니다.
-  final WorkoutData workoutData;  // 운동 데이터 추가
+  final int workoutDuration; // 운동 시간을 초 단위로 받습니다.
+  final WorkoutData workoutData; // 운동 데이터 추가
+  final Map<String, dynamic> compareData;
 
-  ReviewPage({Key? key, required this.workoutDuration, required this.workoutData}) : super(key: key);
+  ReviewPage({
+    Key? key,
+    required this.workoutDuration,
+    required this.workoutData,
+    required this.compareData,
+  }) : super(key: key);
 
   @override
   _ReviewPageState createState() => _ReviewPageState();
@@ -19,6 +27,13 @@ class ReviewPage extends StatefulWidget {
 class _ReviewPageState extends State<ReviewPage> {
   final ImagePicker _picker = ImagePicker();
   XFile? _imageFile;
+  String _compareResult = '';
+
+  @override
+  void initState() {
+    super.initState();
+    print('Received compareData: ${widget.compareData}');
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
@@ -62,15 +77,44 @@ class _ReviewPageState extends State<ReviewPage> {
     );
   }
 
+  Future<void> _sendCompareData() async {
+    const url = 'http://52.79.236.191:3000/api/workout/compare';
+    try {
+      final body = json.encode(widget.compareData);
+      print('Request body: $body');
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+      print('R: $body');
+      if (response.statusCode == 200) {
+        print('Data sent successfully');
+        setState(() {
+          _compareResult = response.body;
+        });
+        print(_compareResult);
+      } else {
+        print('Failed to send data: ${response.reasonPhrase}');
+        setState(() {
+          _compareResult = 'Failed to send data: ${response.reasonPhrase}\nResponse body: ${response.body}';
+        });
+      }
+    } catch (error) {
+      print('Error sending data: $error');
+      setState(() {
+        _compareResult = 'Error sending data: $error';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget> exerciseDetailsWidgets = widget.workoutData.exerciseDetails.entries.map((entry) {
       return ListTile(
         title: Text(entry.key),
-        subtitle: Text(
-            'Sessions: ${entry.value.sessionCounts.join(", ")}, '
-                'Weights: ${entry.value.weights.map((w) => w.toStringAsFixed(1)).join(", ")} kg'
-        ),
+        subtitle: Text('Sessions: ${entry.value.sessionCounts.join(", ")}, '
+            'Weights: ${entry.value.weights.map((w) => w.toStringAsFixed(1)).join(", ")} kg'),
       );
     }).toList();
 
@@ -115,17 +159,21 @@ class _ReviewPageState extends State<ReviewPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Container(
-                                  padding: EdgeInsets.all(6),  // Icon padding
+                                  padding: EdgeInsets.all(6), // Icon padding
                                   decoration: BoxDecoration(
-                                    color: Color(0xff6AC7F0),  // Container background color
-                                    borderRadius: BorderRadius.circular(12),  // Container corner radius
+                                    color: Color(0xff6AC7F0), // Container background color
+                                    borderRadius: BorderRadius.circular(12), // Container corner radius
                                   ),
-                                  child: Icon(Icons.timer, color: Colors.white),  // Icon
+                                  child: Icon(Icons.timer, color: Colors.white), // Icon
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
                                   formattedDuration,
-                                  style: TextStyle(color: Color(0xff003376), fontWeight: FontWeight.bold, fontSize: 30),
+                                  style: TextStyle(
+                                    color: Color(0xff003376),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 30,
+                                  ),
                                 ),
                               ],
                             ),
@@ -144,8 +192,12 @@ class _ReviewPageState extends State<ReviewPage> {
                                 color: Color(0xffEEB3D1), // 배경색
                               ),
                               child: Center(
-                                child: _imageFile != null ? Image.file(File(_imageFile!.path), width: 60, height: 60, fit: BoxFit.cover) :
-                                Icon(
+                                child: _imageFile != null
+                                    ? Image.file(File(_imageFile!.path),
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover)
+                                    : Icon(
                                   Icons.camera_alt, // 카메라 아이콘
                                   size: 40,
                                   color: Color(0xff003376), // 아이콘 색상
@@ -154,24 +206,26 @@ class _ReviewPageState extends State<ReviewPage> {
                             ),
                           ),
                         ),
-
                       ],
                     ),
                     const SizedBox(height: 20),
                     TextField(
-                      maxLines: null,  // 여러 줄 입력 허용
+                      maxLines: null, // 여러 줄 입력 허용
                       onChanged: (value) {
                         // 텍스트 필드 값이 변경될 때마다 Provider를 통해 업데이트
                         Provider.of<WorkoutManager>(context, listen: false).updateReview(value);
                       },
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white,  // 배경색을 흰색으로 설정
-                        hintText: '운동 후기 작성하기',  // 힌트 텍스트
-                        contentPadding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),  // 내부 패딩 추가
+                        fillColor: Colors.white,
+                        // 배경색을 흰색으로 설정
+                        hintText: '운동 후기 작성하기',
+                        // 힌트 텍스트
+                        contentPadding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                        // 내부 패딩 추가
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),  // 경계선 둥글게 처리
-                          borderSide: BorderSide.none,  // 경계선 없음
+                          borderRadius: BorderRadius.circular(12), // 경계선 둥글게 처리
+                          borderSide: BorderSide.none, // 경계선 없음
                         ),
                       ),
                     ),
@@ -199,6 +253,28 @@ class _ReviewPageState extends State<ReviewPage> {
                       },
                       child: const Text('홈 화면 바로가기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xff6AC7F0),
+                        foregroundColor: Colors.black,
+                        minimumSize: Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _sendCompareData,
+                      child: const Text('데이터 비교 실행', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                    const SizedBox(height: 20),
+                    if (_compareResult.isNotEmpty)
+                      Text(
+                        _compareResult,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
                   ],
                 ),
               ),
