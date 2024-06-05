@@ -29,10 +29,11 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _data = widget.initialData;
+    print('초기 데이터: ${List.from(_data.reversed)}'); // 역순 출력
     _selectedDay = DateTime.now();
     _updateImageBasedOnStatus(_selectedDay!);
     _prepareEventMap();
-    print('Received data: ${List.from(_data.reversed)}'); // 역순 출력
+    print('데이터 업데이트: ${List.from(_data.reversed)}'); // 역순 출력
   }
 
   @override
@@ -58,6 +59,8 @@ class _HomePageState extends State<HomePage> {
       print('Old Data: ${List.from(_data.reversed)}');
       await _fetchNewData();
       print('New Data: ${List.from(_data.reversed)}');
+      _prepareEventMap();
+      print('Prepared events: $_events'); // 추가된 이벤트 출력
       _workoutSaveProvider?.setSaved(false);
     }
   }
@@ -96,14 +99,15 @@ class _HomePageState extends State<HomePage> {
       _events[workoutDate]!.add(workout);
     }
 
-    // 날짜별로 이벤트를 정렬하고 가장 최근 이벤트만 남김
+    // 날짜별로 이벤트를 정렬하고 가장 큰 workout_id를 가진 이벤트만 남김
     _events.forEach((key, value) {
-      value.sort((a, b) => DateTime.parse(b['date']).compareTo(DateTime.parse(a['date'])));
-      _events[key] = [value.first];
+      value.sort((a, b) => b['workout_id'].compareTo(a['workout_id'])); // workout_id 기준으로 정렬
+      _events[key] = [value.first]; // 가장 큰 workout_id를 가진 이벤트를 선택
     });
 
     print('Prepared events: $_events'); // 추가된 이벤트 출력
   }
+
 
   Future<void> _fetchWorkoutDetails(int workoutId) async {
     const url = 'http://52.79.236.191:3000/api/workout/getDetails';
@@ -217,12 +221,13 @@ class _HomePageState extends State<HomePage> {
                                 )
                               else
                                 Text(
-                                  (_workoutDetails?['exercise_id']),
+                                  (_workoutDetails?['exercise_id'] ?? 'No Exercise ID'),
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+
                               SizedBox(height: 12),
                               SizedBox(
                                   height: 210,

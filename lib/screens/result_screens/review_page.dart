@@ -133,17 +133,20 @@ class _ReviewPageState extends State<ReviewPage> {
         'user_id': '00001',
         'exercise_id': '00001',
         'exercise_name': 'Bench Press',
-        'test_regression_id': compareResultMap['test_regression']['id'], // 여기서 test_regression_id 값을 가져옵니다.
+        'test_regression_id': widget.compareData['test_regression_id'].toString(),
         'workout_regression_data': workoutRegressionData,
         'status': status,
-        'routine_id': widget.compareData['routine_id'],
+        'routine_id': widget.compareData['routine_id'].toString(),
       });
-      print(widget.compareData['routine_id']);
+
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: body,
       );
+
+      print('workout/save - routine_id ${widget.compareData['routine_id']}');
+      print('저장 바디 값: $body');
 
       if (response.statusCode == 200) {
         print('Workout data saved successfully');
@@ -487,7 +490,6 @@ class _ReviewPageState extends State<ReviewPage> {
                           Provider.of<WorkoutManager>(context, listen: false).updateImageFile(_imageFile!);
                         }
                         Provider.of<WorkoutManager>(context, listen: false).updateWorkoutDuration(widget.workoutDuration);
-                        await _saveWorkoutData(); // API 호출 추가
                         await _saveWorkoutData(); // API 호출 추가
                         // 이제 상태가 업데이트 되었으므로 페이지를 닫습니다.
                         Navigator.pop(context);
