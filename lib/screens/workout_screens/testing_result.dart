@@ -63,7 +63,6 @@ class _TestingResultState extends State<TestingResult> {
     return linePoints;
   }
 
-  //
   Future<void> _saveRegressionData(BuildContext context) async {
     const url = 'http://52.79.236.191:3000/api/vbt_core/save';
     final body = {

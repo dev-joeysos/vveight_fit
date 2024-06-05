@@ -6,6 +6,7 @@ import 'package:flutter_project/provider/regression_provider.dart';
 import 'package:flutter_project/provider/routine_state.dart';
 import 'package:flutter_project/provider/speed_values.dart';
 import 'package:flutter_project/provider/workout_manager.dart';
+import 'package:flutter_project/provider/workout_save_success.dart';
 import 'package:flutter_project/screens/intro_screens/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'components/timer_service.dart';
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => RDP()),
         ChangeNotifierProvider(create: (_) => IsUpdated()),
         ChangeNotifierProvider(create: (_) => RegressionProvider()),
+        ChangeNotifierProvider(create: (_) => WorkoutSaveProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

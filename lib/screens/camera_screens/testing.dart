@@ -42,7 +42,7 @@ class _TestingState extends State<Testing> {
   int _buttonPressCount = 0;
   bool _isComplete = false;
   bool _isFrontCamera = false;
-  List<double> speedValues = [1.0, 0.8, 0.6]; // mean velocity
+  List<double> speedValues = [0.7, 0.6, 0.5]; // mean velocity
   // Todo: 무게 별 속도 중단지점 알려주기
 
   List<double> maxSpeeds = [];

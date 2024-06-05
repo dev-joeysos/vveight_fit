@@ -17,8 +17,8 @@ class MainPageState extends State<MainPage> {
 
   List<Widget> _pages(dynamic data) {
     return [
-      HomePage(data: data),
-      HomePage(data: data),
+      HomePage(initialData: data),
+      HomePage(initialData: data),
       MyPage(),
       MyPage(),
     ];

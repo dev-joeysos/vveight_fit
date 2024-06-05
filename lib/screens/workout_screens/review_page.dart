@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../provider/workout_data.dart';
 import '../../provider/workout_manager.dart';
+import '../../provider/workout_save_success.dart';
 
 class ReviewPage extends StatefulWidget {
   final int workoutDuration; // 운동 시간을 초 단위로 받습니다.
@@ -118,6 +119,40 @@ class _ReviewPageState extends State<ReviewPage> {
       setState(() {
         _compareResult = 'Error sending data: $error';
       });
+    }
+  }
+
+  Future<void> _saveWorkoutData() async {
+    const url = 'http://52.79.236.191:3000/api/workout/save';
+    try {
+      final compareResultMap = json.decode(_compareResult);
+      final workoutRegressionData = compareResultMap['workout_regression'];
+      final status = compareResultMap['status'];
+
+      final body = json.encode({
+        'user_id': '00001',
+        'exercise_id': '00001',
+        'exercise_name': 'Bench Press',
+        'test_regression_id': compareResultMap['test_regression']['id'], // 여기서 test_regression_id 값을 가져옵니다.
+        'workout_regression_data': workoutRegressionData,
+        'status': status,
+        'routine_id': widget.compareData['routine_id'],
+      });
+      print(widget.compareData['routine_id']);
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        print('Workout data saved successfully');
+        Provider.of<WorkoutSaveProvider>(context, listen: false).setSaved(true); // Update isSaved to true
+      } else {
+        print('Failed to save workout data: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      print('Error saving workout data: $error');
     }
   }
 
@@ -443,14 +478,14 @@ class _ReviewPageState extends State<ReviewPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         // Provider를 통해 상태 업데이트
                         Provider.of<WorkoutManager>(context, listen: false).updateWorkoutData(widget.workoutData);
                         if (_imageFile != null) {
                           Provider.of<WorkoutManager>(context, listen: false).updateImageFile(_imageFile!);
                         }
                         Provider.of<WorkoutManager>(context, listen: false).updateWorkoutDuration(widget.workoutDuration);
-
+                        await _saveWorkoutData(); // API 호출 추가
                         // 이제 상태가 업데이트 되었으므로 페이지를 닫습니다.
                         Navigator.pop(context);
                       },

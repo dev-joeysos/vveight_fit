@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:provider/provider.dart';
+
+import '../../provider/regression_provider.dart';
 
 class SetResultPage extends StatelessWidget {
   final int setNumber;
@@ -64,15 +67,17 @@ class SetResultPage extends StatelessWidget {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final regressionId = responseData['regression_id'];
-        // Handle the received regression_id as needed
         print('Saved regression data with ID: $regressionId');
+
+        // Update the RegressionProvider with the new regressionId based on exerciseName
+        Provider.of<RegressionProvider>(context, listen: false)
+            .updateRegressionId(exerciseName, regressionId);
+
         Navigator.of(context).pop({'exerciseName': exerciseName, 'regressionId': regressionId});
       } else {
-        // Handle error response
         print('Failed to save regression data: ${response.reasonPhrase}');
       }
     } catch (error) {
-      // Handle any exceptions
       print('Error saving regression data: $error');
     }
   }

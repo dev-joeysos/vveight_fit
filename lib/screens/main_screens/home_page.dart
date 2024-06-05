@@ -1,14 +1,19 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../provider/workout_save_success.dart';
 
+// Todo: isSaved 감지 > true 변환 > getAll 한 번 더 쏘고 데이터 업데이트:= 달력에 갱신
 class HomePage extends StatefulWidget {
-  final dynamic data;
+  //final dynamic data;
+  // const HomePage({super.key, required this.data});
+  final dynamic initialData;
 
-  const HomePage({super.key, required this.data});
+  const HomePage({super.key, required this.initialData});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -20,21 +25,63 @@ class _HomePageState extends State<HomePage> {
   String _imageAsset = '';
   final Map<DateTime, List<dynamic>> _events = {};
   Map<String, dynamic>? _workoutDetails;
+  dynamic _data;
 
   @override
   void initState() {
     super.initState();
+    _data = widget.initialData;
     _selectedDay = DateTime.now();
     _updateImageBasedOnStatus(_selectedDay!);
     _prepareEventMap();
-    print('Received data: ${widget.data}');
+    print('Received data: $_data');
+    Provider.of<WorkoutSaveProvider>(context, listen: false).addListener(_handleSaveStatusChange);
+  }
+
+  @override
+  void dispose() {
+    Provider.of<WorkoutSaveProvider>(context, listen: false).removeListener(_handleSaveStatusChange);
+    super.dispose();
+  }
+
+  void _handleSaveStatusChange() async {
+    final isSaved = Provider.of<WorkoutSaveProvider>(context, listen: false).isSaved;
+    if (isSaved) {
+      print('Old Data: $_data');
+      await _fetchNewData();
+      print('New Data: $_data');
+      Provider.of<WorkoutSaveProvider>(context, listen: false).setSaved(false);
+    }
+  }
+
+  Future<void> _fetchNewData() async {
+    const url = 'http://52.79.236.191:3000/api/workout/getAll';
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode({'user_id': '00001'}),
+      );
+
+      if (response.statusCode == 200) {
+        final newData = json.decode(response.body);
+        setState(() {
+          _data = newData;
+          _prepareEventMap();  // 새로운 데이터로 이벤트 맵 갱신
+        });
+      } else {
+        print('Failed to fetch new data: ${response.reasonPhrase}');
+      }
+    } catch (error) {
+      print('Error fetching new data: $error');
+    }
   }
 
   void _prepareEventMap() {
-    for (var workout in widget.data) {
+    _events.clear();
+    for (var workout in _data) {
       DateTime workoutDate = DateTime.parse(workout['date']);
-      workoutDate =
-          DateTime(workoutDate.year, workoutDate.month, workoutDate.day);
+      workoutDate = DateTime(workoutDate.year, workoutDate.month, workoutDate.day);
       if (_events[workoutDate] == null) {
         _events[workoutDate] = [];
       }
@@ -43,8 +90,7 @@ class _HomePageState extends State<HomePage> {
 
     // 날짜별로 이벤트를 정렬하고 가장 최근 이벤트만 남김
     _events.forEach((key, value) {
-      value.sort((a, b) =>
-          DateTime.parse(b['date']).compareTo(DateTime.parse(a['date'])));
+      value.sort((a, b) => DateTime.parse(b['date']).compareTo(DateTime.parse(a['date'])));
       _events[key] = [value.first];
     });
   }
@@ -272,6 +318,7 @@ class _HomePageState extends State<HomePage> {
                                         show:
                                             false, // Hide the border around the chart
                                       ),
+                                      clipData: FlClipData.all(),
                                     ),
                                   )),
                             ],

@@ -16,31 +16,30 @@ class RegressionModel {
 
 class RegressionProvider with ChangeNotifier {
   RegressionModel _regressionModel = RegressionModel(
-    regressionIdBench: '00001',
+    regressionIdBench: '147',
     regressionIdSquat: null,
     regressionIdDL: '00000',
-    regressionIdSP: '00033',
+    regressionIdSP: '33',
   );
 
   RegressionModel get regressionModel => _regressionModel;
 
-  void updateRegressionIds({
-    String? regressionIdBench,
-    String? regressionIdSquat,
-    String? regressionIdDL,
-    String? regressionIdSP,
-  }) {
-    if (regressionIdBench != null) {
-      _regressionModel.regressionIdBench = regressionIdBench;
-    }
-    if (regressionIdSquat != null) {
-      _regressionModel.regressionIdSquat = regressionIdSquat;
-    }
-    if (regressionIdDL != null) {
-      _regressionModel.regressionIdDL = regressionIdDL;
-    }
-    if (regressionIdSP != null) {
-      _regressionModel.regressionIdSP = regressionIdSP;
+  void updateRegressionId(String exerciseName, int regressionId) {
+    switch (exerciseName) {
+      case 'Bench Press':
+        _regressionModel.regressionIdBench = regressionId.toString();
+        break;
+      case 'Squat':
+        _regressionModel.regressionIdSquat = regressionId.toString();
+        break;
+      case 'Dead Lift':
+        _regressionModel.regressionIdDL = regressionId.toString();
+        break;
+      case 'Over Head Press':
+        _regressionModel.regressionIdSP = regressionId.toString();
+        break;
+      default:
+        throw ArgumentError('Unknown exercise name: $exerciseName');
     }
     notifyListeners();
   }
