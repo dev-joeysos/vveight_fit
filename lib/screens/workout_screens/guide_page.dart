@@ -313,7 +313,7 @@ class _GuidePageState extends State<GuidePage> {
                         isStartExercise = false; // 모델 생성 플래그 설정
                         showInputDialog(context);
                       },
-                      child: Text('모델 생성'),
+                      child: Text('모델 생성1'),
                     ),
                     ElevatedButton(
                       onPressed: () {

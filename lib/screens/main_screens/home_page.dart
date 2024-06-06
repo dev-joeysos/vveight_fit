@@ -491,19 +491,10 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
   List<FlSpot> _getLineSpots(Map<String, dynamic> regressionData) {
     double slope = double.parse(regressionData['slope'].toString());
     double yIntercept = double.parse(regressionData['y_intercept'].toString());
-    double maxX;
-
-    if (_workoutDetails?['workout_regression'] != false &&
-        _workoutDetails?['workout_regression']?['one_rep_max'] != null) {
-      maxX = double.parse(_workoutDetails?['workout_regression']?['one_rep_max']?.toString() ?? '80.0');
-    } else {
-      maxX = double.parse(_workoutDetails?['test_regression']?['one_rep_max']?.toString() ?? '80.0');
-    }
-
+    double maxX = double.parse(_workoutDetails?['test_regression']?['one_rep_max']?.toString() ?? '80.0');
     maxX = (maxX / 10).ceil() * 10; // Round up to the nearest 10
     List<FlSpot> spots = [];
     for (double x = maxX; x >= maxX - 20; x -= 5) {

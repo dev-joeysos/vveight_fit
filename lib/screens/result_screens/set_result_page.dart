@@ -42,6 +42,22 @@ class SetResultPage extends StatelessWidget {
     return linePoints;
   }
 
+  void _printBody(BuildContext context) {
+    final body = {
+      'user_id': '00001',
+      'exercise_id': exerciseId,
+      'name': exerciseName,
+      'regression': {
+        'r_squared': rSquared,
+        'slope': slope,
+        'y_intercept': yIntercept,
+        'type': 'Test',
+        'one_rep_max': oneRM,
+      },
+    };
+    print('Request body: ${json.encode(body)}');
+  }
+
   Future<void> _saveRegressionData(BuildContext context) async {
     const url = 'http://52.79.236.191:3000/api/vbt_core/save';
     final body = {
@@ -245,6 +261,13 @@ class SetResultPage extends StatelessWidget {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
+                  _printBody(context);
+                },
+                child: Text('Print Body'),
+              ),
+              SizedBox(height: 10), // Add some spacing between buttons
+              ElevatedButton(
+                onPressed: () {
                   if (hasRegressionData) {
                     _saveRegressionData(context);
                   } else {
@@ -260,3 +283,4 @@ class SetResultPage extends StatelessWidget {
     );
   }
 }
+

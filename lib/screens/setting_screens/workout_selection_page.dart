@@ -59,7 +59,7 @@ class _SelectPageState extends State<SelectPage> {
       child: InkWell(
         onTap: () {
           if (unavailable) {
-            navigateToGuidePage(keyId ?? '', title);
+            navigateToGuidePage(title);
           } else {
             navigateToSamplePage(key);
           }
@@ -116,7 +116,28 @@ class _SelectPageState extends State<SelectPage> {
     );
   }
 
-  void navigateToGuidePage(String exerciseId, String exerciseName) {
+  void navigateToGuidePage(String exerciseName) {
+    String exerciseId;
+
+    switch (exerciseName) {
+      case 'Bench Press':
+        exerciseId = '00001';
+        break;
+      case 'Dead Lift':
+        exerciseId = '00004';
+        break;
+      case 'Over Head Press':
+        exerciseId = '00009';
+        break;
+      case 'Squat':
+        exerciseId = '00010';
+        break;
+      default:
+        _showAlertDialog(context, '올바른 운동을 선택해주세요');
+        return;
+    }
+
+    print('블락 > 가이드 페이지 전달 데이터: $exerciseId and exerciseName: $exerciseName');
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -130,4 +151,24 @@ class _SelectPageState extends State<SelectPage> {
       ),
     );
   }
+}
+
+void _showAlertDialog(BuildContext context, String message) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('알림'),
+        content: Text(message),
+        actions: <Widget>[
+          TextButton(
+            child: Text('확인'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
 }
