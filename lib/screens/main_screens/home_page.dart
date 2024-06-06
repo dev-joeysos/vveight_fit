@@ -213,7 +213,7 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               if (_workoutDetails?['routine_id'] == null)
                                 Text(
-                                  ('LV 프로필'),
+                                  _getExerciseName(_workoutDetails?['test_regression']?['exercise_id']) ?? 'LV 프로필',
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -221,7 +221,7 @@ class _HomePageState extends State<HomePage> {
                                 )
                               else
                                 Text(
-                                  (_workoutDetails?['exercise_id'] ?? 'No Exercise ID'),
+                                  _getExerciseName(_workoutDetails?['exercise_id']) ?? 'No Exercise ID',
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -538,5 +538,20 @@ class _HomePageState extends State<HomePage> {
     } else {
       print('No workouts on this date.');
     }
+  }
+}
+
+String? _getExerciseName(String? exerciseId) {
+  switch (exerciseId) {
+    case '00001':
+      return '벤치 프레스 LV';
+    case '00004':
+      return '데드리프트 LV';
+    case '00009':
+      return '오버헤드 프레스 LV';
+    case '00010':
+      return '스쿼트 LV';
+    default:
+      return null;
   }
 }

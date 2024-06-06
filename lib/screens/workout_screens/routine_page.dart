@@ -308,13 +308,13 @@ class _RoutinePageState extends State<RoutinePage> {
 
       for (int i = 0; i < selectedExercises.length; i++) {
         newExpandedStates[i] = expandedStates[
-        oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
+                oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
             false;
         newExerciseSets[i] = exerciseSets[
-        oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
+                oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
             [];
         newFailedStates[i] = getFailedStates[
-        oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
+                oldIndex == i ? newIndex : (newIndex == i ? oldIndex : i)] ??
             false; // 추가
       }
 
@@ -364,16 +364,21 @@ class _RoutinePageState extends State<RoutinePage> {
             continue;
           }
 
-          var regressionProvider = Provider.of<RegressionProvider>(context, listen: false);
-          String exerciseName = selectedExercises.firstWhere((exercise) => exercise.exerciseId == exerciseId).name;
+          var regressionProvider =
+              Provider.of<RegressionProvider>(context, listen: false);
+          String exerciseName = selectedExercises
+              .firstWhere((exercise) => exercise.exerciseId == exerciseId)
+              .name;
 
           var regressionId;
           switch (exerciseName) {
             case 'Bench Press':
-              regressionId = regressionProvider.regressionModel.regressionIdBench;
+              regressionId =
+                  regressionProvider.regressionModel.regressionIdBench;
               break;
             case 'Squat':
-              regressionId = regressionProvider.regressionModel.regressionIdSquat;
+              regressionId =
+                  regressionProvider.regressionModel.regressionIdSquat;
               break;
             case 'Dead Lift':
               regressionId = regressionProvider.regressionModel.regressionIdDL;
@@ -385,7 +390,9 @@ class _RoutinePageState extends State<RoutinePage> {
 
           int regressionIdInt = int.parse(regressionId);
 
-          var mostRecentData = data.firstWhere((element) => element['regression_id'] == regressionIdInt, orElse: () => data[0]);
+          var mostRecentData = data.firstWhere(
+              (element) => element['regression_id'] == regressionIdInt,
+              orElse: () => data[0]);
           int index = selectedExercises
               .indexWhere((exercise) => exercise.exerciseId == exerciseId);
 
@@ -487,9 +494,9 @@ class _RoutinePageState extends State<RoutinePage> {
       );
 
       print('Request body: ${jsonEncode(<String, dynamic>{
-        'routine_id': routineId,
-        'user_id': 00001,
-      })}');
+            'routine_id': routineId,
+            'user_id': 00001,
+          })}');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
 
@@ -523,7 +530,8 @@ class _RoutinePageState extends State<RoutinePage> {
           exerciseSets[index] = sets;
 
           // Set the target_velocity using a Provider
-          Provider.of<TargetVelo>(context, listen: false).setTargetVelocity(double.parse(exercise['target_velocity'].toString()));
+          Provider.of<TargetVelo>(context, listen: false).setTargetVelocity(
+              double.parse(exercise['target_velocity'].toString()));
         }
       }
     });
@@ -568,7 +576,7 @@ class _RoutinePageState extends State<RoutinePage> {
               itemBuilder: (context, index) {
                 bool isExpanded = expandedStates[index] ?? false;
                 ExerciseData? exerciseData =
-                workoutData.getData(selectedExercises[index].name);
+                    workoutData.getData(selectedExercises[index].name);
                 List<double>? speedValues = speedValuesProvider
                     .getSpeedValues(selectedExercises[index].name);
 
@@ -630,7 +638,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                 key: ObjectKey(setDetail),
                                 setDetail: setDetail,
                                 setIndex:
-                                exerciseSets[index]!.indexOf(setDetail) + 1,
+                                    exerciseSets[index]!.indexOf(setDetail) + 1,
                                 onUpdate: () => setState(() {}),
                                 onDelete: () => _removeSetDetail(index,
                                     exerciseSets[index]!.indexOf(setDetail)),
@@ -657,21 +665,21 @@ class _RoutinePageState extends State<RoutinePage> {
                                 ElevatedButton(
                                   onPressed: () {
                                     List<double> realWeights =
-                                    getRealWeights(index);
+                                        getRealWeights(index);
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => GuidePage(
                                           weight:
-                                          exerciseSets[index]!.last.weight,
+                                              exerciseSets[index]!.last.weight,
                                           reps: exerciseSets[index]!.last.reps,
                                           exerciseId: selectedExercises[index]
                                               .exerciseId,
                                           exerciseName:
-                                          selectedExercises[index].name,
+                                              selectedExercises[index].name,
                                           realWeights: realWeights,
                                           regressionData:
-                                          exerciseRegressionData[index],
+                                              exerciseRegressionData[index],
                                         ),
                                       ),
                                     );
@@ -691,105 +699,105 @@ class _RoutinePageState extends State<RoutinePage> {
           ),
           isExerciseSelected
               ? Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: _selectExercises,
-                child: Text('운동 추가'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (isWorkoutStarted) {
-                    workoutDuration =
-                        Provider.of<TimerService>(context, listen: false)
-                            .seconds;
-                    Provider.of<TimerService>(context, listen: false)
-                        .stopTimer();
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _selectExercises,
+                      child: Text('운동 추가'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (isWorkoutStarted) {
+                          workoutDuration =
+                              Provider.of<TimerService>(context, listen: false)
+                                  .seconds;
+                          Provider.of<TimerService>(context, listen: false)
+                              .stopTimer();
 
-                    Exercise mainExercise = selectedExercises.firstWhere(
-                            (exercise) => exercise.isMain,
-                        orElse: () => selectedExercises.first);
-                    int index = selectedExercises.indexOf(mainExercise);
+                          Exercise mainExercise = selectedExercises.firstWhere(
+                              (exercise) => exercise.isMain,
+                              orElse: () => selectedExercises.first);
+                          int index = selectedExercises.indexOf(mainExercise);
 
-                    String? regressionId;
-                    switch (mainExercise.name) {
-                      case 'Bench Press':
-                        regressionId = Provider.of<RegressionProvider>(
-                            context,
-                            listen: false)
-                            .regressionModel
-                            .regressionIdBench;
-                        break;
-                      case 'Squat':
-                        regressionId = Provider.of<RegressionProvider>(
-                            context,
-                            listen: false)
-                            .regressionModel
-                            .regressionIdSquat;
-                        break;
-                      case 'Dead Lift':
-                        regressionId = Provider.of<RegressionProvider>(
-                            context,
-                            listen: false)
-                            .regressionModel
-                            .regressionIdDL;
-                        break;
-                      case 'Over Head Press':
-                        regressionId = Provider.of<RegressionProvider>(
-                            context,
-                            listen: false)
-                            .regressionModel
-                            .regressionIdSP;
-                        break;
-                    }
-                    List<Map<String, dynamic>> exerciseData =
-                    List.generate(
-                        exerciseSets[index]!.length,
-                            (i) => {
-                          'weight':
-                          exerciseSets[index]![i].weight,
-                          'mean_velocity':
-                          speedValuesProvider.getSpeedValues(
-                              mainExercise.name)?[i],
-                        });
+                          String? regressionId;
+                          switch (mainExercise.name) {
+                            case 'Bench Press':
+                              regressionId = Provider.of<RegressionProvider>(
+                                      context,
+                                      listen: false)
+                                  .regressionModel
+                                  .regressionIdBench;
+                              break;
+                            case 'Squat':
+                              regressionId = Provider.of<RegressionProvider>(
+                                      context,
+                                      listen: false)
+                                  .regressionModel
+                                  .regressionIdSquat;
+                              break;
+                            case 'Dead Lift':
+                              regressionId = Provider.of<RegressionProvider>(
+                                      context,
+                                      listen: false)
+                                  .regressionModel
+                                  .regressionIdDL;
+                              break;
+                            case 'Over Head Press':
+                              regressionId = Provider.of<RegressionProvider>(
+                                      context,
+                                      listen: false)
+                                  .regressionModel
+                                  .regressionIdSP;
+                              break;
+                          }
+                          List<Map<String, dynamic>> exerciseData =
+                              List.generate(
+                                  exerciseSets[index]!.length,
+                                  (i) => {
+                                        'weight':
+                                            exerciseSets[index]![i].weight,
+                                        'mean_velocity':
+                                            speedValuesProvider.getSpeedValues(
+                                                mainExercise.name)?[i],
+                                      });
 
-                    Map<String, dynamic> reviewData = {
-                      'user_id': '00001',
-                      'test_regression_id': regressionId,
-                      'exercise_id': mainExercise.exerciseId,
-                      'name': mainExercise.name,
-                      'data': exerciseData,
-                      'routine_id': createdRoutineId,
-                    };
+                          Map<String, dynamic> reviewData = {
+                            'user_id': '00001',
+                            'test_regression_id': regressionId,
+                            'exercise_id': mainExercise.exerciseId,
+                            'name': mainExercise.name,
+                            'data': exerciseData,
+                            'routine_id': createdRoutineId,
+                          };
 
-                    print('Sending data to ReviewPage: $reviewData');
+                          print('Sending data to ReviewPage: $reviewData');
 
-                    Navigator.of(context)
-                        .pushReplacement(MaterialPageRoute(
-                      builder: (context) => ReviewPage(
-                        workoutDuration: workoutDuration,
-                        workoutData: workoutData,
-                        compareData: reviewData,
-                      ),
-                    ));
-                  } else {
-                    await getAll();
-                    await createRoutine(); // 루틴 생성 함수 호출
-                    _toggleWorkout();
-                  }
-                },
-                child: Text(isWorkoutStarted ? '운동 완료' : '운동 시작'),
-              ),
-              ElevatedButton(
-                onPressed: _printExercises,
-                child: Text('운동 목록 출력'),
-              ),
-            ],
-          )
+                          Navigator.of(context)
+                              .pushReplacement(MaterialPageRoute(
+                            builder: (context) => ReviewPage(
+                              workoutDuration: workoutDuration,
+                              workoutData: workoutData,
+                              compareData: reviewData,
+                            ),
+                          ));
+                        } else {
+                          await getAll();
+                          await createRoutine(); // 루틴 생성 함수 호출
+                          _toggleWorkout();
+                        }
+                      },
+                      child: Text(isWorkoutStarted ? '운동 완료' : '운동 시작'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _printExercises,
+                      child: Text('운동 목록 출력'),
+                    ),
+                  ],
+                )
               : ElevatedButton(
-            onPressed: _selectExercises,
-            child: Text('운동 선택'),
-          ),
+                  onPressed: _selectExercises,
+                  child: Text('운동 선택'),
+                ),
         ],
       ),
     );
