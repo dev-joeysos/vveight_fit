@@ -107,7 +107,7 @@ class _ReviewPageState extends State<ReviewPage> {
         setState(() {
           _compareResult = response.body;
         });
-        print(_compareResult);
+        print('workout/compart: $_compareResult');
       } else {
         print('Failed to send data: ${response.reasonPhrase}');
         setState(() {
@@ -131,8 +131,8 @@ class _ReviewPageState extends State<ReviewPage> {
 
       final body = json.encode({
         'user_id': '00001',
-        'exercise_id': '00001',
-        'exercise_name': 'Bench Press',
+        'exercise_id': compareResultMap['exercise_id'],
+        'exercise_name': compareResultMap['name'],
         'test_regression_id': widget.compareData['test_regression_id'].toString(),
         'workout_regression_data': workoutRegressionData,
         'status': status,

@@ -54,6 +54,26 @@ class _SelectPageState extends State<SelectPage> {
   Widget buildWorkoutCard(String title, String? keyId, String key, String imagePath) {
     final bool unavailable = keyId == null || keyId == "00000";
     final String message = keyId == "00000" ? "LV 프로파일을 갱신해주세요" : "LV 프로파일이 없습니다.";
+    String localizedTitle;
+
+    // 이름을 로컬화하는 부분 추가
+    switch (title) {
+      case 'Bench Press':
+        localizedTitle = '벤치 프레스';
+        break;
+      case 'Squat':
+        localizedTitle = '스쿼트';
+        break;
+      case 'Conventional Dead Lift':
+        localizedTitle = '데드 리프트';
+        break;
+      case 'Over Head Press':
+        localizedTitle = '오버헤드 프레스';
+        break;
+      default:
+        localizedTitle = title; // 기본적으로 원래 제목 사용
+    }
+
     return Material(
       color: Colors.white,
       child: InkWell(
@@ -85,7 +105,7 @@ class _SelectPageState extends State<SelectPage> {
                 ),
                 SizedBox(height: 10),
                 Text(
-                  title,
+                  localizedTitle, // 로컬화된 제목 사용
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -147,7 +167,8 @@ class _SelectPageState extends State<SelectPage> {
           weight: 0,
           reps: 0,
           realWeights: [],
-          disableModelCreation: false, restPeriod: 0,
+          disableModelCreation: false,
+          restPeriod: 0,
         ),
       ),
     );
