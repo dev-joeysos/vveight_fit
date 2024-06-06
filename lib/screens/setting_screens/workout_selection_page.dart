@@ -32,7 +32,7 @@ class _SelectPageState extends State<SelectPage> {
               children: <Widget>[
                 Expanded(child: buildWorkoutCard("Bench Press", regressionProvider.regressionModel.regressionIdBench, "Chest", 'assets/images/p_training/bench_press.jpeg')),
                 VerticalDivider(width: 1, color: Colors.black),
-                Expanded(child: buildWorkoutCard("Squat", regressionProvider.regressionModel.regressionIdSquat, "lower body", 'assets/images/p_training/squat.jpeg')),
+                Expanded(child: buildWorkoutCard("Back Squat", regressionProvider.regressionModel.regressionIdSquat, "lower body", 'assets/images/p_training/squat.jpeg')),
               ],
             ),
           ),
@@ -42,7 +42,7 @@ class _SelectPageState extends State<SelectPage> {
               children: <Widget>[
                 Expanded(child: buildWorkoutCard("Conventional Dead Lift", regressionProvider.regressionModel.regressionIdDL, "Back", 'assets/images/p_training/deadlift.jpeg')),
                 VerticalDivider(width: 1, color: Colors.black),
-                Expanded(child: buildWorkoutCard("Over Head Press", regressionProvider.regressionModel.regressionIdSP, "Shoulder", 'assets/images/p_training/overhead_press.jpeg')),
+                Expanded(child: buildWorkoutCard("Overhead Press", regressionProvider.regressionModel.regressionIdSP, "Shoulder", 'assets/images/p_training/overhead_press.jpeg')),
               ],
             ),
           ),
@@ -61,13 +61,13 @@ class _SelectPageState extends State<SelectPage> {
       case 'Bench Press':
         localizedTitle = '벤치 프레스';
         break;
-      case 'Squat':
+      case 'Back Squat':
         localizedTitle = '스쿼트';
         break;
       case 'Conventional Dead Lift':
         localizedTitle = '데드 리프트';
         break;
-      case 'Over Head Press':
+      case 'Overhead Press':
         localizedTitle = '오버헤드 프레스';
         break;
       default:

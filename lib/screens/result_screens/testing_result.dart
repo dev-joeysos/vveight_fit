@@ -382,6 +382,7 @@ class _TestingResultState extends State<TestingResult> {
                               color: Colors.grey,
                             ),
                           ),
+                          clipData: FlClipData.all(),
                         ),
                       ),
                   ],

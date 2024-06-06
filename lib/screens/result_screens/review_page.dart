@@ -16,15 +16,15 @@ class ReviewPage extends StatefulWidget {
 
   // 그래프 그리기용 샘플 데이터
   final List<FlSpot>? testRegressionSpots = [
-    FlSpot(45, 0.89),
-    FlSpot(55, 0.65),
-    FlSpot(60, 0.38),
+    // FlSpot(45, 0.89),
+    // FlSpot(55, 0.65),
+    // FlSpot(60, 0.38),
   ];
 
   final List<FlSpot>? workoutRegressionSpots = [
-    FlSpot(40, 1.0),
-    FlSpot(50, 0.8),
-    FlSpot(60, 0.6),
+    // FlSpot(40, 1.0),
+    // FlSpot(50, 0.8),
+    // FlSpot(60, 0.6),
   ];
 
   ReviewPage({
@@ -46,7 +46,11 @@ class _ReviewPageState extends State<ReviewPage> {
   @override
   void initState() {
     super.initState();
-    print('Received compareData: ${widget.compareData}');
+    print('리뷰 페이지 비교 데이터: ${widget.compareData}');
+    // compareData 값이 있으면 데이터 비교 자동 실행
+    if (widget.compareData.isNotEmpty) {
+      _sendCompareData();
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -164,43 +168,57 @@ class _ReviewPageState extends State<ReviewPage> {
   List<FlSpot> _getLineSpots(Map<String, dynamic> regressionData) {
     double slope = double.parse(regressionData['slope'].toString());
     double yIntercept = double.parse(regressionData['y_intercept'].toString());
+    double oneRepMax = double.parse(regressionData['one_rep_max'].toString());
+
     List<FlSpot> spots = [];
-    for (int i = 40; i <= 80; i += 5) {
-      double x = i.toDouble();
-      double y = slope * x + yIntercept;
-      spots.add(FlSpot(x, y));
+    for (double weight = 40; weight <= oneRepMax; weight += 5) {
+      double velocity = slope * weight + yIntercept;
+      spots.add(FlSpot(weight, velocity));
     }
     return spots;
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> exerciseDetailsWidgets = widget.workoutData.exerciseDetails.entries.map((entry) {
-      return ListTile(
-        title: Text(entry.key),
-        subtitle: Text('Sessions: ${entry.value.sessionCounts.join(", ")}, '
-            'Weights: ${entry.value.weights.map((w) => w.toStringAsFixed(1)).join(", ")} kg'),
-      );
-    }).toList();
-
     String formattedDuration = formatDuration(widget.workoutDuration);
     Map<String, dynamic>? compareResultMap;
-    List<FlSpot>? testRegressionSpots;
-    List<FlSpot>? workoutRegressionSpots;
+    double? testSlope;
+    double? testYIntercept;
+    double? workoutSlope;
+    double? workoutYIntercept;
     String? status;
+    double minX = 80;
+    double maxX = 100;
+    double minY = 0;
+    double maxY = 1.0;
 
     if (_compareResult.isNotEmpty) {
       compareResultMap = json.decode(_compareResult);
       if (compareResultMap != null) {
         status = compareResultMap['status'];
         if (compareResultMap['test_regression'] != null) {
-          testRegressionSpots = _getLineSpots(compareResultMap['test_regression']);
+          testSlope = double.parse(compareResultMap['test_regression']['slope'].toString());
+          testYIntercept = double.parse(compareResultMap['test_regression']['y_intercept'].toString());
         }
         if (compareResultMap['workout_regression'] != null) {
-          workoutRegressionSpots = _getLineSpots(compareResultMap['workout_regression']);
+          workoutSlope = double.parse(compareResultMap['workout_regression']['slope'].toString());
+          workoutYIntercept = double.parse(compareResultMap['workout_regression']['y_intercept'].toString());
         }
       }
+      // 데이터에서 최소 무게 값을 찾아 minX로 설정
+      List<dynamic> data = widget.compareData['data'];
+      minX = data.map((entry) => entry['weight'] as double).reduce((a, b) => a < b ? a : b);
+
+      // 데이터에서 최대 무게 값을 찾아 maxX로 설정하고 20을 더함
+      maxX = data.map((entry) => entry['weight'] as double).reduce((a, b) => a > b ? a : b);
+
+      // // 데이터에서 최소 속도 값을 찾아 minY로 설정
+      // minY = data.map((entry) => entry['mean_velocity'] as double).reduce((a, b) => a < b ? a : b);
+
+      // 데이터에서 최대 속도 값을 찾아 maxY로 설정
+      maxY = data.map((entry) => entry['mean_velocity'] as double).reduce((a, b) => a > b ? a : b);
     }
+
     // 상태에 따른 이미지 설정
     String statusImageAsset;
     switch (status) {
@@ -213,7 +231,7 @@ class _ReviewPageState extends State<ReviewPage> {
       case 'normal':
         statusImageAsset = 'assets/images/p_good.png';
         break;
-      case 'testrequired':
+      case 'test Required':
         statusImageAsset = 'assets/images/p_default.png';
         break;
       case 'exhausted':
@@ -238,12 +256,12 @@ class _ReviewPageState extends State<ReviewPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 90),
+                    const SizedBox(height: 80),
                     const Text(
                       '수고하셨어요!', // Main greeting text
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 30,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -316,136 +334,157 @@ class _ReviewPageState extends State<ReviewPage> {
                     const SizedBox(height: 12),
                     // Todo: 그래프 완성 > 실제 운동 무게 가져와서 넣기
                     Container(
-                        width: 640,
-                        height: 360,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                height: 240,
-                                width: 300,
-                                child: LineChart(
-                                  LineChartData(
-                                    minX: 40, // X축 최소값 설정
-                                    maxX: 80, // X축 최대값 설정
-                                    minY: 0, // Y축 최소값 설정
-                                    maxY: 1.0, // Y축 최대값 설정
-                                    lineBarsData: [
-                                      if (workoutRegressionSpots != null)
-                                        LineChartBarData(
-                                          spots: workoutRegressionSpots,
-                                          isCurved: false,
-                                          color: Color(0xff143365),
-                                          barWidth: 5,
-                                          isStrokeCapRound: false,
-                                          belowBarData: BarAreaData(show: false),
-                                          dotData: FlDotData(show: false),
-                                        ),
-                                      if (testRegressionSpots != null)
-                                        LineChartBarData(
-                                          spots: testRegressionSpots,
-                                          isCurved: false,
-                                          color: Color(0xff6BBEE2),
-                                          barWidth: 5,
-                                          dashArray: [10, 8],
-                                          isStrokeCapRound: false,
-                                          belowBarData: BarAreaData(show: false),
-                                          dotData: FlDotData(show: true), // Dot data를 보이도록 설정
-                                        ),
-                                    ],
-                                    titlesData: FlTitlesData(
-                                      leftTitles: AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: true,
-                                          interval: 0.2,
-                                          getTitlesWidget: (value, meta) {
-                                            if (value == 0) {
-                                              return Container(); // Hide the left bottom 0.0 value
-                                            }
-                                            return Padding(
-                                              padding: const EdgeInsets.only(right: 0.0),
-                                              child: Text(
-                                                value.toStringAsFixed(1),
-                                                style: TextStyle(fontSize: 15, color: Colors.grey),
+                      width: 600,
+                      height: 360,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: 240,
+                              width: 300,
+                              child: LineChart(
+                                LineChartData(
+                                  minX: minX, // X축 최소값 설정
+                                  maxX: maxX, // X축 최대값 설정
+                                  minY: minY, // Y축 최소값 설정
+                                  maxY: maxY, // Y축 최대값 설정
+                                  lineBarsData: [
+                                    if (workoutSlope != null && workoutYIntercept != null)
+                                      LineChartBarData(
+                                        spots: [
+                                          FlSpot(minX, workoutSlope * minX + workoutYIntercept),
+                                          FlSpot(maxX, workoutSlope * maxX + workoutYIntercept)
+                                        ],
+                                        isCurved: false,
+                                        color: Color(0xff6BBEE2),
+                                        barWidth: 5,
+                                        dashArray: [10, 8],
+                                        isStrokeCapRound: false,
+                                        belowBarData: BarAreaData(show: false),
+                                        dotData: FlDotData(show: false),
+                                      ),
+                                    if (testSlope != null && testYIntercept != null)
+                                      LineChartBarData(
+                                        spots: [
+                                          FlSpot(minX, testSlope! * minX + testYIntercept!),
+                                          FlSpot(maxX, testSlope! * maxX + testYIntercept!)
+                                        ],
+                                        isCurved: false,
+                                        color: Color(0xff143365),
+                                        barWidth: 5,
+                                        isStrokeCapRound: false,
+                                        belowBarData: BarAreaData(show: false),
+                                      ),
+                                  ],
+                                  titlesData: FlTitlesData(
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        interval: 0.2,
+                                        getTitlesWidget: (value, meta) {
+                                          // if (value == 0) {
+                                          //   return Container(); // Hide the left bottom 0.0 value
+                                          // }
+                                          return Padding(
+                                            padding: const EdgeInsets.only(right: 0.0),
+                                            child: Text(
+                                              value.toStringAsFixed(1),
+                                              style: TextStyle(fontSize: 15, color: Colors.grey),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget: (value, meta) {
+                                          final interval = (maxX - minX) / 5;
+                                          return Padding(
+                                            padding: const EdgeInsets.only(top: 4.0),
+                                            child: Text(
+                                              '${(minX + interval * (value - minX) ~/ interval).toInt()}kg',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
                                               ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+
+                                    rightTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                    topTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                  ),
+                                  gridData: FlGridData(
+                                    show: true,
+                                    horizontalInterval: 0.2,
+                                    drawVerticalLine: false,
+                                  ),
+                                  borderData: FlBorderData(
+                                    show: false,
+                                  ),
+                                  lineTouchData: LineTouchData(
+                                    touchTooltipData: LineTouchTooltipData(
+                                      getTooltipItems: (touchedSpots) {
+                                        return touchedSpots.map((touchedSpot) {
+                                          var entry = widget.compareData['data'].firstWhere(
+                                                (entry) => entry['weight'] == touchedSpot.x,
+                                            orElse: () => null,
+                                          );
+                                          if (entry != null) {
+                                            return LineTooltipItem(
+                                              '${entry['weight']}kg, ${entry['mean_velocity'].toStringAsFixed(2)}m/s',
+                                              const TextStyle(color: Colors.black),
                                             );
-                                          },
-                                        ),
-                                      ),
-                                      bottomTitles: AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: true,
-                                          getTitlesWidget: (value, meta) {
-                                            return Padding(
-                                              padding: const EdgeInsets.only(top: 4.0),
-                                              child: Text(
-                                                '${value.toInt()}kg',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      rightTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false),
-                                      ),
-                                      topTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false),
-                                      ),
-                                    ),
-                                    gridData: FlGridData(
-                                      show: true,
-                                      horizontalInterval: 0.2,
-                                      drawVerticalLine: false,
-                                    ),
-                                    borderData: FlBorderData(
-                                      show: false,
-                                    ),
-                                    lineTouchData: LineTouchData(
-                                      touchTooltipData: LineTouchTooltipData(
-                                        getTooltipItems: (touchedSpots) {
-                                          return touchedSpots.map((touchedSpot) {
+                                          } else {
                                             return LineTooltipItem(
                                               '${touchedSpot.x}kg, ${touchedSpot.y.toStringAsFixed(2)}m/s',
                                               const TextStyle(color: Colors.black),
                                             );
-                                          }).toList();
-                                        },
-                                      ),
+                                          }
+                                        }).toList();
+                                      },
                                     ),
-                                    clipData: FlClipData.all(), // 경계선을 넘지 않도록 설정
                                   ),
+
+                                  clipData: FlClipData.all(), // 경계선을 넘지 않도록 설정
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                child: Text(
-                                  'Mean Velocity',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                '45kg-0.89m/s, 55kg-0.65m/s, 60kg-0.38m/s',
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text(
+                                '측정 결과',
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            Text(
+                              widget.compareData['data']
+                                  .map((entry) => '${entry['weight'].toStringAsFixed(0)}kg - ${entry['mean_velocity'].toStringAsFixed(1)}m/s')
+                                  .join(', '),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
                     ),
                     SizedBox(height: 20),
                     TextField(
@@ -497,27 +536,27 @@ class _ReviewPageState extends State<ReviewPage> {
                       child: const Text('홈 화면 바로가기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(height: 20),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xff6AC7F0),
-                        foregroundColor: Colors.black,
-                        minimumSize: Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: _sendCompareData,
-                      child: const Text('데이터 비교 실행', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(height: 20),
-                    if (_compareResult.isNotEmpty)
-                      Text(
-                        _compareResult,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                      ),
+                    // ElevatedButton(
+                    //   style: ElevatedButton.styleFrom(
+                    //     backgroundColor: Color(0xff6AC7F0),
+                    //     foregroundColor: Colors.black,
+                    //     minimumSize: Size(double.infinity, 50),
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(12),
+                    //     ),
+                    //   ),
+                    //   onPressed: _sendCompareData,
+                    //   child: const Text('데이터 비교 실행', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    // ),
+                    // const SizedBox(height: 20),
+                    // if (_compareResult.isNotEmpty)
+                    //   Text(
+                    //     _compareResult,
+                    //     style: TextStyle(
+                    //       color: Colors.white,
+                    //       fontSize: 16,
+                    //     ),
+                    //   ),
                   ],
                 ),
               ),

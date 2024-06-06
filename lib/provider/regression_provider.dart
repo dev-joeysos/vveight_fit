@@ -16,7 +16,7 @@ class RegressionModel {
 
 class RegressionProvider with ChangeNotifier {
   RegressionModel _regressionModel = RegressionModel(
-    regressionIdBench: '207',
+    regressionIdBench: '265',// '207',
     regressionIdDL: '237', // '237'
     regressionIdSP: null,
     regressionIdSquat: '215',
@@ -32,10 +32,10 @@ class RegressionProvider with ChangeNotifier {
       case 'Conventional Dead Lift':
         _regressionModel.regressionIdDL = regressionId.toString();
         break;
-      case 'Over Head Press':
+      case 'Overhead Press':
         _regressionModel.regressionIdSP = regressionId.toString();
         break;
-      case 'Squat':
+      case 'Back Squat':
         _regressionModel.regressionIdSquat = regressionId.toString();
         break;
       default:

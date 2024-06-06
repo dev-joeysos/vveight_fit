@@ -5,6 +5,7 @@ import 'package:flutter_project/components/styled_button.dart';
 import 'package:provider/provider.dart';
 import '../../components/timer_service.dart';
 import '../../provider/isUpdated.dart';
+import '../../provider/realweghts_list.dart';
 import '../../provider/regression_data.dart';
 import '../../provider/regression_provider.dart';
 import '../../provider/routine_state.dart';
@@ -17,6 +18,7 @@ import 'library_page.dart';
 import 'package:flutter_project/components/edit_routine.dart';
 import 'package:http/http.dart' as http;
 
+// Todo: EditRoutine 컴포넌트 새로 만들기
 class SetDetail {
   double weight = 0;
   int reps = 0;
@@ -601,6 +603,7 @@ class _RoutinePageState extends State<RoutinePage> {
     var routineState = Provider.of<RoutineState>(context);
     var speedValuesProvider = Provider.of<SpeedValuesProvider>(context);
     var updateStatus = Provider.of<IsUpdated>(context);
+    var testWeightsProvider = Provider.of<TestWeightsProvider>(context);
 
     // Check if isUpdated is true and call getAll if it is
     if (updateStatus.isUpdated) {
@@ -627,10 +630,8 @@ class _RoutinePageState extends State<RoutinePage> {
               itemCount: selectedExercises.length,
               itemBuilder: (context, index) {
                 bool isExpanded = expandedStates[index] ?? false;
-                ExerciseData? exerciseData =
-                    workoutData.getData(selectedExercises[index].name);
-                List<double>? speedValues = speedValuesProvider
-                    .getSpeedValues(selectedExercises[index].name);
+                ExerciseData? exerciseData = workoutData.getData(selectedExercises[index].name);
+                List<double>? speedValues = speedValuesProvider.getSpeedValues(selectedExercises[index].name);
 
                 return Container(
                   margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -653,8 +654,7 @@ class _RoutinePageState extends State<RoutinePage> {
                     children: [
                       ListTile(
                         title: Text(selectedExercises[index].name,
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 21)),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 21)),
                         onTap: () => _toggleExpanded(index),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -689,11 +689,9 @@ class _RoutinePageState extends State<RoutinePage> {
                               return EditRoutine(
                                 key: ObjectKey(setDetail),
                                 setDetail: setDetail,
-                                setIndex:
-                                    exerciseSets[index]!.indexOf(setDetail) + 1,
+                                setIndex: exerciseSets[index]!.indexOf(setDetail) + 1,
                                 onUpdate: () => setState(() {}),
-                                onDelete: () => _removeSetDetail(index,
-                                    exerciseSets[index]!.indexOf(setDetail)),
+                                onDelete: () => _removeSetDetail(index, exerciseSets[index]!.indexOf(setDetail)),
                                 exerciseName: selectedExercises[index].name,
                                 exerciseId: selectedExercises[index].exerciseId,
                                 onStartWorkout: _startWorkout,
@@ -702,6 +700,9 @@ class _RoutinePageState extends State<RoutinePage> {
                                 rest_period: setDetail.restPeriod,
                                 realWeights: realWeights,
                                 regressionData: exerciseRegressionData[index],
+                                testWeights: (testWeightsProvider.exerciseId == selectedExercises[index].exerciseId)
+                                    ? testWeightsProvider.testWeights
+                                    : null, // testWeightsProvider 값 전달
                               );
                             }).toList(),
                             Row(
@@ -717,23 +718,18 @@ class _RoutinePageState extends State<RoutinePage> {
                                 ),
                                 ElevatedButton(
                                   onPressed: () {
-                                    List<double> realWeights =
-                                        getRealWeights(index);
+                                    List<double> realWeights = getRealWeights(index);
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => GuidePage(
-                                          weight:
-                                              exerciseSets[index]!.last.weight,
+                                          weight: exerciseSets[index]!.last.weight,
                                           reps: exerciseSets[index]!.last.reps,
                                           restPeriod: exerciseSets[index]!.last.restPeriod,
-                                          exerciseId: selectedExercises[index]
-                                              .exerciseId,
-                                          exerciseName:
-                                              selectedExercises[index].name,
+                                          exerciseId: selectedExercises[index].exerciseId,
+                                          exerciseName: selectedExercises[index].name,
                                           realWeights: realWeights,
-                                          regressionData:
-                                              exerciseRegressionData[index],
+                                          regressionData: exerciseRegressionData[index],
                                           disableModelCreation: true,
                                         ),
                                       ),
@@ -752,6 +748,25 @@ class _RoutinePageState extends State<RoutinePage> {
               onReorder: _onReorder,
             ),
           ),
+          // // TestWeightsProvider의 변화에 따른 UI 업데이트
+          // if (testWeightsProvider.testWeights.isNotEmpty)
+          //   Padding(
+          //     padding: const EdgeInsets.all(16.0),
+          //     child: Column(
+          //       children: [
+          //         Text(
+          //           'Test Weights for Exercise ID: ${testWeightsProvider.exerciseId}',
+          //           style: TextStyle(
+          //               fontWeight: FontWeight.bold, fontSize: 18),
+          //         ),
+          //         SizedBox(height: 8),
+          //         Text(
+          //           testWeightsProvider.testWeights.join(', '),
+          //           style: TextStyle(fontSize: 16),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
           isExerciseSelected
               ? Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -783,7 +798,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                   .regressionModel
                                   .regressionIdBench;
                               break;
-                            case 'Squat':
+                            case 'Back Squat':
                               regressionId = Provider.of<RegressionProvider>(
                                       context,
                                       listen: false)
@@ -797,7 +812,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                   .regressionModel
                                   .regressionIdDL;
                               break;
-                            case 'Over Head Press':
+                            case 'Overhead Press':
                               regressionId = Provider.of<RegressionProvider>(
                                       context,
                                       listen: false)
@@ -809,14 +824,14 @@ class _RoutinePageState extends State<RoutinePage> {
                               List.generate(
                                   exerciseSets[index]!.length,
                                   (i) => {
-                                        'weight':
-                                            exerciseSets[index]![i].weight,
+                                    'weight': testWeightsProvider.exerciseId == mainExercise.exerciseId
+                                        ? testWeightsProvider.testWeights[i]
+                                        : exerciseSets[index]![i].weight,
                                         'mean_velocity':
                                             speedValuesProvider.getSpeedValues(
                                                 mainExercise.name)?[i],
                                       });
 
-                          // Todo: fix
                           Map<String, dynamic> reviewData = {
                             'user_id': '00001',
                             'test_regression_id': regressionId,
@@ -852,7 +867,7 @@ class _RoutinePageState extends State<RoutinePage> {
                 )
               : Column(
                   children: [
-                    _buildGuideCard(), // 가이드 카드 추가
+                    _buildGuideCard(), // 가이드 카드 추가`
                     StyledButton(
                       onPressed: _selectExercises,
                       text: '운동 선택',

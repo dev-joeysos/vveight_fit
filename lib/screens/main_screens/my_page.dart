@@ -118,16 +118,6 @@ class MyPageState extends State<MyPage> with SingleTickerProviderStateMixin {
                           style: TextStyle(fontSize: 20),
                         ),
                         SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _sendRequest,
-                          child: Text('요청 보내기'),
-                        ),
-                        SizedBox(height: 20),
-                        Text(
-                          '응답 결과:',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        Text(_response, style: TextStyle(fontSize: 16)),
                       ],
                     ),
                   ),

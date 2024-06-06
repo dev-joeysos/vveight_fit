@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_project/provider/isUpdated.dart';
+import 'package:flutter_project/provider/realweghts_list.dart';
 import 'package:flutter_project/provider/regression_data.dart';
 import 'package:flutter_project/provider/regression_provider.dart';
 import 'package:flutter_project/provider/routine_state.dart';
@@ -42,6 +43,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RegressionProvider()),
         ChangeNotifierProvider(create: (_) => WorkoutSaveProvider()),
         ChangeNotifierProvider(create: (_) => TargetVelo()),
+        ChangeNotifierProvider(create: (_) => TestWeightsProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

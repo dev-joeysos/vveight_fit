@@ -241,8 +241,9 @@ class _HomePageState extends State<HomePage> {
                                           LineChartBarData(
                                             spots: _getLineSpots(_workoutDetails!['workout_regression']),
                                             isCurved: false,
-                                            color: Color(0xff143365),
+                                            color: Color(0xff6BBEE2),
                                             barWidth: 5,
+                                            dashArray: [10, 8],
                                             isStrokeCapRound: false,
                                             belowBarData: BarAreaData(show: false),
                                             dotData: FlDotData(show: false),
@@ -250,9 +251,8 @@ class _HomePageState extends State<HomePage> {
                                         LineChartBarData(
                                           spots: _getLineSpots(_workoutDetails!['test_regression']),
                                           isCurved: false,
-                                          color: Color(0xff6BBEE2),
-                                          barWidth: 5,
-                                          dashArray: [10, 8],
+                                          color: Color(0xff143365),
+                                          barWidth: 4,
                                           isStrokeCapRound: false,
                                           belowBarData: BarAreaData(show: false),
                                           dotData: FlDotData(show: false),
@@ -332,6 +332,28 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           ),
+                      ],
+                    ),
+                  ),
+                if (_workoutDetails == null)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        SizedBox(height: 10),
+                        Image.asset(
+                          'assets/images/vv_logo.png',
+                          height: 150,
+                        ),
+                        SizedBox(height: 30),
+                        Text(
+                          '기록된 운동이 없습니다.',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                        SizedBox(height: 10),
                       ],
                     ),
                   ),
@@ -491,6 +513,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
   List<FlSpot> _getLineSpots(Map<String, dynamic> regressionData) {
     double slope = double.parse(regressionData['slope'].toString());
     double yIntercept = double.parse(regressionData['y_intercept'].toString());
@@ -513,30 +536,37 @@ class _HomePageState extends State<HomePage> {
         case 'ready':
           _imageAsset = 'assets/images/p_training/ready.jpeg';
           break;
+        case 'normal':
+          _imageAsset = 'assets/images/p_good.png';
+          break;
         case 'burning':
           _imageAsset = 'assets/images/p_training/burning.jpeg';
           break;
         case 'exhausted':
           _imageAsset = 'assets/images/p_training/exhausted.jpeg';
           break;
+        case 'test required':
+          _imageAsset = 'assets/images/p_default.png';
+          break;
         default:
-          _imageAsset = 'assets/images/p_training/ready.jpeg';
+          _imageAsset = 'assets/images/vv_logo.png';
       }
     } else {
-      _imageAsset = 'assets/images/p_default.png';
+      _imageAsset = 'assets/images/vv_logo.png';
     }
   }
 
   void _showWorkoutInfo(DateTime selectedDay) {
-    DateTime dateOnly =
-    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    DateTime dateOnly = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
     if (_events[dateOnly] != null && _events[dateOnly]!.isNotEmpty) {
       var workout = _events[dateOnly]!.first; // 가장 최근의 운동 정보를 사용
-      print(
-          'Date: $dateOnly, Workout ID: ${workout['workout_id']}, Status: ${workout['status']}');
+      print('Date: $dateOnly, Workout ID: ${workout['workout_id']}, Status: ${workout['status']}');
       _fetchWorkoutDetails(workout['workout_id']);
     } else {
       print('No workouts on this date.');
+      setState(() {
+        _workoutDetails = null; // No workouts available
+      });
     }
   }
 }

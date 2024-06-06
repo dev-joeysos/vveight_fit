@@ -1,6 +1,8 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_project/trashs/workCam_page.dart';
+import 'package:provider/provider.dart';
+import '../../provider/realweghts_list.dart';
 import '../camera_screens/camera_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -56,14 +58,12 @@ class _GuidePageState extends State<GuidePage> {
       String weight = weightController.text;
       String reps = repsController.text;
 
-      // Check if both fields are filled
       if (weight.isEmpty || reps.isEmpty || selectedPlates.isEmpty) {
         setState(() {
           errorMessage = "모든 값을 입력해주세요.";
         });
         return;
       }
-      // Check if both inputs are numeric
       if (double.tryParse(weight) == null || int.tryParse(reps) == null) {
         setState(() {
           errorMessage = "숫자값을 입력해주세요.";
@@ -74,20 +74,17 @@ class _GuidePageState extends State<GuidePage> {
       double weightValue = double.parse(weight);
       int repsValue = int.parse(reps);
 
-      // API 호출을 위한 데이터 준비
       Map<String, dynamic> requestBody = {
         'exercise_id': widget.exerciseId,
         'weight': weightValue,
         'reps': repsValue,
-        'units': selectedPlates
-            .map((plate) => double.parse(plate.replaceAll('kg', '')))
-            .toList(),
+        'units': selectedPlates.map((plate) => double.parse(plate.replaceAll('kg', ''))).toList(),
       };
 
       double oneRM = 0.0;
       double threeRM = 0.0;
       List<double> testWeights = [];
-
+      String eID = '';
       try {
         var response = await http.post(
           Uri.parse('http://52.79.236.191:3000/api/vbt_core/base_weights'),
@@ -96,67 +93,60 @@ class _GuidePageState extends State<GuidePage> {
         );
 
         if (response.statusCode == 200) {
-          // 성공적으로 응답을 받았을 경우
           var responseData = json.decode(response.body);
           print('API Response: $responseData');
-
-          // API 응답에서 1RM 및 3RM 값을 가져옴
           oneRM = responseData['one_rep_max'].toDouble();
           threeRM = responseData['three_rep_max'].toDouble();
+          eID = responseData['exercise_id'];
           testWeights = List<double>.from(responseData['test_weights'].map((weight) => weight.toDouble()));
         } else {
-          // 에러 발생 시
           print('Failed to load data: ${response.statusCode}');
         }
       } catch (e) {
-        // 예외 발생 시
         print('Error: $e');
       }
 
       setState(() {
-        errorMessage = null; // Clear any previous error messages
+        errorMessage = null;
       });
-      Navigator.of(context).pop(); // Close the dialog
-      showResultsDialog(
-          context, oneRM, threeRM, testWeights); // Show results in a new dialog
+
+      // 실제 운동할 때 수행한 무게가 루틴 페이지로 반영되어야 합니다.
+      Provider.of<TestWeightsProvider>(context, listen: false).setTestWeights(testWeights, eID);
+
+      Navigator.of(context).pop();
+      showResultsDialog(context, oneRM, threeRM, testWeights);
     }
 
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      // The user must tap a button to dismiss the dialog
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.white,
           title: Text('${widget.exerciseName}'),
           content: Container(
-            width: MediaQuery.of(context).size.width *
-                0.9, // Makes the dialog wider
+            width: MediaQuery.of(context).size.width * 0.9,
             child: SingleChildScrollView(
               child: ListBody(
                 children: <Widget>[
                   TextField(
                     controller: weightController,
-                    keyboardType: TextInputType.number, // Only numeric keyboard
+                    keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: '평균 수행 중량 입력:',
-                      hintText: 'kg', // Hint text
+                      hintText: 'kg',
                     ),
                   ),
                   TextField(
                     controller: repsController,
-                    keyboardType: TextInputType.number, // Only numeric keyboard
+                    keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: '평균 수행 횟수 입력:',
-                      hintText: '횟수', // Hint text
+                      hintText: '횟수',
                     ),
                   ),
                   SizedBox(height: 20),
-                  Text("원판 종류를 모두 선택해주세요",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color(0xff585858))),
+                  Text("원판 종류를 모두 선택해주세요", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xff585858))),
                   SizedBox(height: 10),
                   PlateSelection(
                     selectedPlates: selectedPlates,
@@ -166,8 +156,7 @@ class _GuidePageState extends State<GuidePage> {
                       });
                     },
                   ),
-                  if (errorMessage !=
-                      null) // Error message if there is an error
+                  if (errorMessage != null)
                     Padding(
                       padding: EdgeInsets.only(top: 8),
                       child: Text(
@@ -182,7 +171,7 @@ class _GuidePageState extends State<GuidePage> {
           actions: <Widget>[
             TextButton(
               onPressed: validateInput,
-              child: Text('확인'), // Check inputs when this button is pressed
+              child: Text('확인'),
             ),
             TextButton(
               child: Text('취소'),
@@ -190,8 +179,7 @@ class _GuidePageState extends State<GuidePage> {
                 setState(() {
                   errorMessage = null;
                 });
-                Navigator.of(context)
-                    .pop(); // Close the dialog without saving data
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -201,54 +189,50 @@ class _GuidePageState extends State<GuidePage> {
   }
 
   // Function to display 1RM and 3RM results and navigate to CameraPage
-  void showResultsDialog(BuildContext context, double oneRM, double threeRM,
-      List<double> testWeights) {
+  void showResultsDialog(BuildContext context, double oneRM, double threeRM, List<double> testWeights) {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('계산 결과'),
-          content: Text(
-              '1RM: ${oneRM.toStringAsFixed(0)} kg\n3RM: ${threeRM.toStringAsFixed(0)} kg\n'),
+          content: Text('1RM: ${oneRM.toStringAsFixed(0)} kg\n3RM: ${threeRM.toStringAsFixed(0)} kg\n'),
           actions: <Widget>[
             TextButton(
               child: Text('모델 생성'),
               onPressed: () async {
                 Navigator.of(context).pop();
+                // Update the Provider with the fetched testWeights and exerciseId
+                Provider.of<TestWeightsProvider>(context, listen: false).setTestWeights(testWeights, widget.exerciseId);
+
+                final cameras = await availableCameras();
                 if (isStartExercise) {
-                  final cameras = await availableCameras();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        // builder: (context) => WorkCamPage(
-                        //       weights: [widget.weight, widget.weight, widget.weight],
-                        //       exerciseName: widget.exerciseName,
-                        //       regressionData: widget.regressionData,
-                        //     )),
                       builder: (context) => Testing(
-                          cameras: cameras,
-                          exerciseName: widget.exerciseName,
-                          exerciseId: widget.exerciseId,
-                          oneRM: oneRM,
-                          threeRM: threeRM,
-                          realWeights: testWeights,
-                          rData: widget.regressionData,
-                          restPeriod: widget.restPeriod,
+                        cameras: cameras,
+                        exerciseName: widget.exerciseName,
+                        exerciseId: widget.exerciseId,
+                        oneRM: oneRM,
+                        threeRM: threeRM,
+                        realWeights: testWeights,
+                        rData: widget.regressionData,
+                        restPeriod: widget.restPeriod,
                       ),
                     ),
-                );
+                  );
                 } else {
-                  final cameras = await availableCameras();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder: (context) => CameraPage(
-                          cameras: cameras,
-                          exerciseName: widget.exerciseName,
-                          exerciseId: widget.exerciseId,
-                          oneRM: oneRM,
-                          threeRM: threeRM,
-                          testWeights: testWeights), // Pass testWeights here
+                        cameras: cameras,
+                        exerciseName: widget.exerciseName,
+                        exerciseId: widget.exerciseId,
+                        oneRM: oneRM,
+                        threeRM: threeRM,
+                        testWeights: testWeights,
+                      ),
                     ),
                   );
                 }
