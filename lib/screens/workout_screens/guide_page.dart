@@ -16,6 +16,7 @@ class GuidePage extends StatefulWidget {
   final int reps;
   final List<double> realWeights; // 진짜 운동용 무게 받기 _ 불러온 루틴 데이터의 최신 운동수행 무게
   final Map<String, dynamic>? regressionData; // 회귀 데이터 받기
+  final bool disableModelCreation;
 
   const GuidePage({
     Key? key,
@@ -25,6 +26,7 @@ class GuidePage extends StatefulWidget {
     required this.reps,
     required this.realWeights,
     this.regressionData,
+    required this.disableModelCreation,
   }) : super(key: key);
 
   @override
@@ -308,20 +310,22 @@ class _GuidePageState extends State<GuidePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        isStartExercise = false; // 모델 생성 플래그 설정
-                        showInputDialog(context);
-                      },
-                      child: Text('모델 생성1'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        isStartExercise = true; // 운동 시작 플래그 설정
-                        showInputDialog(context);
-                      },
-                      child: Text('운동 시작'),
-                    ),
+                    if (!widget.disableModelCreation)
+                      ElevatedButton(
+                        onPressed: () {
+                          isStartExercise = false; // 모델 생성 플래그 설정
+                          showInputDialog(context);
+                        },
+                        child: Text('모델 생성1'),
+                      ),
+                    if (widget.disableModelCreation)
+                      ElevatedButton(
+                        onPressed: () {
+                          isStartExercise = true; // 운동 시작 플래그 설정
+                          showInputDialog(context);
+                        },
+                        child: Text('운동 시작'),
+                      ),
                   ],
                 ),
               ],

@@ -680,6 +680,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                           realWeights: realWeights,
                                           regressionData:
                                               exerciseRegressionData[index],
+                                          disableModelCreation: true,
                                         ),
                                       ),
                                     );

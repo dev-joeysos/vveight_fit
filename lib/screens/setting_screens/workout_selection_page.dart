@@ -147,6 +147,7 @@ class _SelectPageState extends State<SelectPage> {
           weight: 0,
           reps: 0,
           realWeights: [],
+          disableModelCreation: false,
         ),
       ),
     );
