@@ -89,6 +89,7 @@ class _CameraPageState extends State<CameraPage> {
   void _showSetResultPage(BuildContext context, int setNumber, int setTime,
       double weight, double maxSpeed) {
     maxSpeeds.add(maxSpeed);
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -140,6 +141,10 @@ class _CameraPageState extends State<CameraPage> {
       // Call the API and handle the response
       var regressionData = await postRegressionData();
       if (regressionData != null) {
+        double oneRepMax = double.parse(regressionData['one_rep_max'].toString());
+
+        // Print the oneRM value from the API response
+        print('수정된 oneRM: $oneRepMax');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -153,7 +158,8 @@ class _CameraPageState extends State<CameraPage> {
               slope: double.parse(regressionData['slope'].toString()),
               yIntercept:
                   double.parse(regressionData['y_intercept'].toString()),
-              exerciseId: widget.exerciseId, oneRM: widget.oneRM,
+              exerciseId: widget.exerciseId,
+              oneRM: oneRepMax,
             ),
           ),
         );
@@ -182,7 +188,7 @@ class _CameraPageState extends State<CameraPage> {
 
     if (response.statusCode == 200) {
       var responseData = json.decode(response.body);
-      print('Regression Data: $responseData');
+      print('모델 생성 회귀데이터: $responseData');
       return responseData['regression'];
     } else {
       print('Failed to load regression data');

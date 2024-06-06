@@ -6,6 +6,7 @@ import 'package:flutter_project/components/my_textfield.dart';
 import '../../components/round_title.dart';
 import '../main_screens/main_page.dart';
 
+// Login => user = "00001"
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -49,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
       isLoading = true;
     });
 
-    // API 요청 보내기
+    // workout/getAll = 기록된 모든 운동 데이터를 불러옵니다.
     try {
       final response = await http.post(
         Uri.parse('http://52.79.236.191:3000/api/workout/getAll'),
@@ -64,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => MainPage(data: data), // 데이터 전달
+            builder: (context) => MainPage(data: data),
           ),
         );
       } else {
@@ -114,60 +115,61 @@ class _LoginPageState extends State<LoginPage> {
             child: isLoading
                 ? CircularProgressIndicator() // 로딩 중일 때 표시할 위젯
                 : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 100),
-                Image.asset('assets/images/vv_logo_white.png', height: 100),
-                const SizedBox(height: 30),
-                Text('당신의 근성장을 응원합니다',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold)),
-                const SizedBox(height: 20),
-                MyTextField(
-                    controller: usernameController,
-                    hintText: '이메일',
-                    obscureText: false),
-                const SizedBox(height: 20),
-                MyTextField(
-                    controller: passwordController,
-                    hintText: '비밀번호',
-                    obscureText: true),
-                const SizedBox(height: 20),
-                MyButton(
-                  onTap: () => signUserIn(context),
-                  text: "로그인",
-                ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 35.0),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('회원가입',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold)),
-                        Text('비밀번호를 모르겠어요',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold)),
-                      ]),
-                ),
-                const SizedBox(height: 100),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    RoundTitle(imagePath: 'assets/images/google.png'),
-                    SizedBox(width: 15),
-                    RoundTitle(imagePath: 'assets/images/apple.png'),
-                  ],
-                ),
-              ],
-            ),
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 100),
+                      Image.asset('assets/images/vv_logo_white.png',
+                          height: 100),
+                      const SizedBox(height: 30),
+                      Text('당신의 근성장을 응원합니다',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 20),
+                      MyTextField(
+                          controller: usernameController,
+                          hintText: '이메일',
+                          obscureText: false),
+                      const SizedBox(height: 20),
+                      MyTextField(
+                          controller: passwordController,
+                          hintText: '비밀번호',
+                          obscureText: true),
+                      const SizedBox(height: 20),
+                      MyButton(
+                        onPressed: () => signUserIn(context),
+                        text: "로그인",
+                      ),
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 35.0),
+                        child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('회원가입',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold)),
+                              Text('비밀번호를 모르겠어요',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold)),
+                            ]),
+                      ),
+                      const SizedBox(height: 100),
+                      // Row(
+                      //   mainAxisAlignment: MainAxisAlignment.center,
+                      //   children: const [
+                      //     RoundTitle(imagePath: 'assets/images/google.png'),
+                      //     SizedBox(width: 15),
+                      //     RoundTitle(imagePath: 'assets/images/apple.png'),
+                      //   ],
+                      // ),
+                    ],
+                  ),
           ),
         ),
       ),

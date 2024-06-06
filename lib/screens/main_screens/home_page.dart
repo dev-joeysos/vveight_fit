@@ -237,36 +237,25 @@ class _HomePageState extends State<HomePage> {
                                       minY: 0,
                                       maxY: 1.0,
                                       lineBarsData: [
-                                        if (_workoutDetails![
-                                        'workout_regression'] !=
-                                            false)
+                                        if (_workoutDetails!['workout_regression'] != false)
                                           LineChartBarData(
-                                            spots: _getLineSpots(
-                                                _workoutDetails![
-                                                'workout_regression']),
+                                            spots: _getLineSpots(_workoutDetails!['workout_regression']),
                                             isCurved: false,
                                             color: Color(0xff143365),
                                             barWidth: 5,
                                             isStrokeCapRound: false,
-                                            belowBarData:
-                                            BarAreaData(show: false),
-                                            dotData: FlDotData(
-                                              show: false,
-                                            ),
+                                            belowBarData: BarAreaData(show: false),
+                                            dotData: FlDotData(show: false),
                                           ),
                                         LineChartBarData(
-                                          spots: _getLineSpots(_workoutDetails![
-                                          'test_regression']),
+                                          spots: _getLineSpots(_workoutDetails!['test_regression']),
                                           isCurved: false,
                                           color: Color(0xff6BBEE2),
                                           barWidth: 5,
                                           dashArray: [10, 8],
                                           isStrokeCapRound: false,
-                                          belowBarData:
-                                          BarAreaData(show: false),
-                                          dotData: FlDotData(
-                                            show: false,
-                                          ),
+                                          belowBarData: BarAreaData(show: false),
+                                          dotData: FlDotData(show: false),
                                         ),
                                       ],
                                       titlesData: FlTitlesData(
@@ -279,15 +268,10 @@ class _HomePageState extends State<HomePage> {
                                                 return Container(); // Hide the left bottom 0.0 value
                                               }
                                               return Padding(
-                                                padding: const EdgeInsets.only(
-                                                    right: 4.0),
-                                                // Add padding to create a gap
+                                                padding: const EdgeInsets.only(right: 4.0),
                                                 child: Text(
                                                   value.toStringAsFixed(1),
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors
-                                                          .grey), // Set y-axis text color to gray
+                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
                                                 ),
                                               );
                                             },
@@ -296,17 +280,15 @@ class _HomePageState extends State<HomePage> {
                                         bottomTitles: AxisTitles(
                                           sideTitles: SideTitles(
                                             showTitles: true,
+                                            interval: 5, // Set interval to 5
                                             getTitlesWidget: (value, meta) {
                                               return Padding(
-                                                padding: const EdgeInsets.only(
-                                                    top: 4.0),
-                                                // Adjust the padding to increase the gap
+                                                padding: const EdgeInsets.only(top: 4.0),
                                                 child: Text(
                                                   '${value.toInt()}kg',
                                                   style: TextStyle(
                                                     fontSize: 12,
-                                                    fontWeight: FontWeight
-                                                        .bold, // Make the text bold
+                                                    fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
                                               );
@@ -314,12 +296,10 @@ class _HomePageState extends State<HomePage> {
                                           ),
                                         ),
                                         rightTitles: AxisTitles(
-                                          sideTitles:
-                                          SideTitles(showTitles: false),
+                                          sideTitles: SideTitles(showTitles: false),
                                         ),
                                         topTitles: AxisTitles(
-                                          sideTitles:
-                                          SideTitles(showTitles: false),
+                                          sideTitles: SideTitles(showTitles: false),
                                         ),
                                       ),
                                       gridData: FlGridData(
@@ -328,12 +308,17 @@ class _HomePageState extends State<HomePage> {
                                         drawVerticalLine: false,
                                       ),
                                       borderData: FlBorderData(
-                                        show:
-                                        false, // Hide the border around the chart
+                                        show: true,
+                                        border: Border.all(
+                                          color: Colors.grey,
+                                          width: 1,
+                                        ),
                                       ),
                                       clipData: FlClipData.all(),
                                     ),
-                                  )),
+                                  )
+
+                              ),
                             ],
                           ),
                         ),
@@ -436,7 +421,7 @@ class _HomePageState extends State<HomePage> {
                                 fontSize: 16.0,
                                 fontWeight: FontWeight.bold,
                                 color:
-                                isEventDay ? Colors.red : Color(0xff3168A3),
+                                isEventDay ? Color(0xff6AC7F0) : Color(0xff3168A3),
                               ),
                             ),
                           );
@@ -510,9 +495,18 @@ class _HomePageState extends State<HomePage> {
   List<FlSpot> _getLineSpots(Map<String, dynamic> regressionData) {
     double slope = double.parse(regressionData['slope'].toString());
     double yIntercept = double.parse(regressionData['y_intercept'].toString());
+    double maxX;
+
+    if (_workoutDetails?['workout_regression'] != false &&
+        _workoutDetails?['workout_regression']?['one_rep_max'] != null) {
+      maxX = double.parse(_workoutDetails?['workout_regression']?['one_rep_max']?.toString() ?? '80.0');
+    } else {
+      maxX = double.parse(_workoutDetails?['test_regression']?['one_rep_max']?.toString() ?? '80.0');
+    }
+
+    maxX = (maxX / 10).ceil() * 10; // Round up to the nearest 10
     List<FlSpot> spots = [];
-    for (int i = 45; i <= 65; i += 5) {
-      double x = i.toDouble();
+    for (double x = maxX; x >= maxX - 20; x -= 5) {
       double y = slope * x + yIntercept;
       spots.add(FlSpot(x, y));
     }
