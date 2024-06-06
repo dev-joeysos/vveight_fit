@@ -237,7 +237,7 @@ class _CameraPageState extends State<CameraPage> {
                                   TextStyle(color: Colors.white, fontSize: 20)),
                           if (_isMeasuring)
                             Text(
-                                "${((_buttonPressCount % 3) + 1)}세트 측정 중입니다.\n최대 속력: ${speedValues[(_buttonPressCount % 3) % speedValues.length].toStringAsFixed(2)} m/s",
+                                "${((_buttonPressCount % 3) + 1)}세트 측정 중입니다.\n평균 속도: ${speedValues[(_buttonPressCount % 3) % speedValues.length].toStringAsFixed(2)} m/s",
                                 textAlign: TextAlign.center,
                                 style:
                                     TextStyle(fontSize: 20, color: Colors.red)),

@@ -33,6 +33,7 @@ class _PurposePageState extends State<PurposePage> {
                   Expanded(
                     child: PurposeButton(
                       title: "지구력 향상",
+                      description: "추천 대상: 초급자",
                       onTap: () => goToRoutinePage("endurance"),
                     ),
                   ),
@@ -40,6 +41,7 @@ class _PurposePageState extends State<PurposePage> {
                   Expanded(
                     child: PurposeButton(
                       title: "근력 향상",
+                      description: "추천 대상: 중급자",
                       onTap: () => goToRoutinePage("strength"),
                     ),
                   ),
@@ -47,6 +49,7 @@ class _PurposePageState extends State<PurposePage> {
                   Expanded(
                     child: PurposeButton(
                       title: "근비대",
+                      description: "추천 대상: 고급자",
                       onTap: () => goToRoutinePage("hypertrophy"),
                     ),
                   ),
@@ -87,25 +90,39 @@ class _PurposePageState extends State<PurposePage> {
 
 class PurposeButton extends StatelessWidget {
   final String title;
+  final String description;
   final VoidCallback onTap;
 
-  const PurposeButton({super.key, required this.title, required this.onTap});
+  const PurposeButton({super.key, required this.title, required this.description, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8.0),
+      highlightColor: Colors.blue.withOpacity(0.3),
       child: Container(
         alignment: Alignment.center,
+        padding: const EdgeInsets.all(16.0), // Added padding
         decoration: BoxDecoration(
           border: Border.all(color: Colors.black),
           borderRadius: BorderRadius.circular(8.0),
         ),
-        child: Text(
-          title,
-          style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 3.0), // Space between title and description
+            Text(
+              description,
+              style: TextStyle(fontSize: 12.0, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

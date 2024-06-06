@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import '../../provider/isUpdated.dart';
 import '../../provider/speed_values.dart';
@@ -18,6 +19,7 @@ class TestingResult extends StatefulWidget {
   final double yIntercept;
   final double oneRM;
   final Map<String, dynamic>? rData;
+  final int restPeriod;
 
   TestingResult({
     super.key,
@@ -32,6 +34,7 @@ class TestingResult extends StatefulWidget {
     required this.yIntercept,
     required this.oneRM,
     this.rData,
+    required this.restPeriod,
   });
 
   @override
@@ -40,16 +43,48 @@ class TestingResult extends StatefulWidget {
 
 class _TestingResultState extends State<TestingResult> {
   bool _providerUpdated = false;
+  late int _remainingRestTime;
+  Timer? _timer;
+  bool _showRestTimer = false;
 
   @override
-      void didChangeDependencies() {
-        super.didChangeDependencies();
-        if (!_providerUpdated && widget.rData != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Provider.of<SpeedValuesProvider>(context, listen: false)
-                .updateSpeedValues(widget.exerciseName, widget.speedValues);
-          });
-          _providerUpdated = true;
+  void initState() {
+    super.initState();
+    _remainingRestTime = widget.restPeriod;
+    if (_remainingRestTime > 0) {
+      _showRestTimer = true;
+      _startRestTimer();
+    }
+  }
+
+  void _startRestTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_remainingRestTime > 0) {
+          _remainingRestTime--;
+        } else {
+          _timer?.cancel();
+          _showRestTimer = false;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_providerUpdated && widget.rData != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Provider.of<SpeedValuesProvider>(context, listen: false)
+            .updateSpeedValues(widget.exerciseName, widget.speedValues);
+      });
+      _providerUpdated = true;
     }
   }
 
@@ -74,7 +109,7 @@ class _TestingResultState extends State<TestingResult> {
         'r_squared': widget.rData?['r_squared']?.toString() ?? widget.rSquared.toString(),
         'slope': widget.rData?['slope']?.toString() ?? widget.slope.toString(),
         'y_intercept': widget.rData?['y_intercept']?.toString() ?? widget.yIntercept.toString(),
-        'type': 'Workout'
+        'type': 'workout'
       }
     };
 
@@ -107,7 +142,7 @@ class _TestingResultState extends State<TestingResult> {
   @override
   Widget build(BuildContext context) {
     List<FlSpot> linearLinePoints =
-        _getLinearLinePoints(widget.slope, widget.yIntercept);
+    _getLinearLinePoints(widget.slope, widget.yIntercept);
     List<FlSpot>? rDataLinePoints;
     if (widget.rData != null) {
       rDataLinePoints = _getLinearLinePoints(
@@ -184,27 +219,25 @@ class _TestingResultState extends State<TestingResult> {
                               dotPainter: FlDotCirclePainter(
                                 radius: 8,
                                 color: Color(0xff6BBEE2),
-                                strokeWidth: 2,
-                                strokeColor: Colors.black,
                               ),
                             ),
                         ],
                         minX: (widget.realWeights
-                                    .reduce((a, b) => a < b ? a : b) -
-                                10)
+                            .reduce((a, b) => a < b ? a : b) -
+                            10)
                             .toDouble(),
                         maxX: (widget.realWeights
-                                    .reduce((a, b) => a > b ? a : b) +
-                                10)
+                            .reduce((a, b) => a > b ? a : b) +
+                            10)
                             .toDouble(),
                         minY: 0,
                         maxY: (widget.speedValues
-                                .reduce((a, b) => a > b ? a : b) +
+                            .reduce((a, b) => a > b ? a : b) +
                             0.4),
-                        backgroundColor: Colors.grey[200],
+                        backgroundColor: Colors.white,
                         gridData: FlGridData(
                           show: true,
-                          drawVerticalLine: true,
+                          drawVerticalLine: false,
                           drawHorizontalLine: true,
                           verticalInterval: 10,
                           horizontalInterval: 0.2,
@@ -215,6 +248,15 @@ class _TestingResultState extends State<TestingResult> {
                             sideTitles: SideTitles(
                               showTitles: true,
                               interval: 0.2,
+                              getTitlesWidget: (value, meta) {
+                                return Text(
+                                  value.toStringAsFixed(1),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           rightTitles: AxisTitles(
@@ -227,6 +269,19 @@ class _TestingResultState extends State<TestingResult> {
                             sideTitles: SideTitles(
                               showTitles: true,
                               interval: 10,
+                              getTitlesWidget: (value, meta) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 4.0),
+                                  child: Text(
+                                    '${value.toInt()}kg',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ),
@@ -256,23 +311,24 @@ class _TestingResultState extends State<TestingResult> {
                                 color: Color(0xff6BBEE2),
                                 barWidth: 5,
                                 dotData: FlDotData(show: false),
+                                dashArray: [9, 6],
                               ),
                           ],
                           minX: (widget.realWeights
-                                      .reduce((a, b) => a < b ? a : b) -
-                                  10)
+                              .reduce((a, b) => a < b ? a : b) -
+                              10)
                               .toDouble(),
                           maxX: (widget.realWeights
-                                      .reduce((a, b) => a > b ? a : b) +
-                                  10)
+                              .reduce((a, b) => a > b ? a : b) +
+                              10)
                               .toDouble(),
                           minY: 0,
                           maxY: (widget.speedValues
-                                  .reduce((a, b) => a > b ? a : b) +
+                              .reduce((a, b) => a > b ? a : b) +
                               0.4),
                           gridData: FlGridData(
                             show: true,
-                            drawVerticalLine: true,
+                            drawVerticalLine: false,
                             drawHorizontalLine: true,
                             verticalInterval: 10,
                             horizontalInterval: 0.2,
@@ -283,6 +339,15 @@ class _TestingResultState extends State<TestingResult> {
                               sideTitles: SideTitles(
                                 showTitles: true,
                                 interval: 0.2,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    value.toStringAsFixed(1),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                             rightTitles: AxisTitles(
@@ -295,6 +360,19 @@ class _TestingResultState extends State<TestingResult> {
                               sideTitles: SideTitles(
                                 showTitles: true,
                                 interval: 10,
+                                getTitlesWidget: (value, meta) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Text(
+                                      '${value.toInt()}kg',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -309,12 +387,22 @@ class _TestingResultState extends State<TestingResult> {
                   ],
                 ),
               ),
+              if (_showRestTimer) ...[
+                SizedBox(height: 20),
+                Text(
+                  'Rest Time: $_remainingRestTime seconds',
+                  style: TextStyle(fontSize: 18, color: Colors.green),
+                ),
+                Text(
+                  '창닫기를 누르면 휴식이 중단됩니다.',
+                  style: TextStyle(fontSize: 18, color: Colors.green),
+                ),
+              ],
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
                   if (hasRData) {
-                    _saveRegressionData(
-                        context); // Save new measured data to server
+                    _saveRegressionData(context);
                   } else {
                     Navigator.of(context).pop();
                   }
@@ -328,3 +416,4 @@ class _TestingResultState extends State<TestingResult> {
     );
   }
 }
+

@@ -18,6 +18,7 @@ class Testing extends StatefulWidget {
   final double threeRM;
   final List<double> realWeights;
   final Map<String, dynamic>? rData; // 회귀 데이터 받기
+  final int restPeriod;
 
   const Testing({
     Key? key,
@@ -28,6 +29,7 @@ class Testing extends StatefulWidget {
     required this.threeRM,
     required this.realWeights,
     this.rData,
+    required this.restPeriod,
   }) : super(key: key);
 
   @override
@@ -111,6 +113,7 @@ class _TestingState extends State<Testing> {
           yIntercept: double.parse(widget.rData?['y_intercept'].toString() ?? '0.0'),
           exerciseId: widget.exerciseId,
           oneRM: widget.oneRM,
+          restPeriod: widget.restPeriod,
         ),
       ),
     ).then((_) {
@@ -162,6 +165,7 @@ class _TestingState extends State<Testing> {
               yIntercept: double.parse(widget.rData?['y_intercept'].toString() ?? '0.0'),
               exerciseId: widget.exerciseId, oneRM: widget.oneRM,
               rData: regressionData,
+              restPeriod: 0,
             ),
           ),
         );

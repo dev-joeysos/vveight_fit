@@ -12,6 +12,7 @@ class EditRoutine extends StatelessWidget {
   final String exerciseId;
   final double weight;
   final int reps;
+  final int rest_period;
   final List<double> realWeights; // 진짜 운동용 무게 받기 _ 불러온 루틴 데이터의 최신 운동수행 무게
   final Map<String, dynamic>? regressionData; // 회귀 데이터 받기
 
@@ -26,6 +27,7 @@ class EditRoutine extends StatelessWidget {
     required this.exerciseId, // 생성자에서 받음
     required this.weight,
     required this.reps,
+    required this.rest_period,
     required this.realWeights,
     this.regressionData,
   }) : super(key: key);
@@ -69,6 +71,15 @@ class EditRoutine extends StatelessWidget {
               label: '횟수',
               onChanged: (val) {
                 setDetail.reps = int.tryParse(val) ?? setDetail.reps;
+                onUpdate();
+              },
+            ),
+          if (setDetail.restPeriod != 0)
+            _buildTextFormField(
+              initialValue: setDetail.restPeriod.toString(),
+              label: '휴식 시간',
+              onChanged: (val) {
+                setDetail.reps = int.tryParse(val) ?? setDetail.restPeriod;
                 onUpdate();
               },
             ),

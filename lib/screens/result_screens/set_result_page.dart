@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
@@ -122,12 +123,12 @@ class SetResultPage extends StatelessWidget {
                 '측정 시간: ${setTime}초',
                 style: TextStyle(fontSize: 18),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 20),
               Text(
-                '최대 속력: ${speedValues.last.toStringAsFixed(2)} m/s',
+                '평균 속도: ${speedValues.last.toStringAsFixed(2)} m/s',
                 style: TextStyle(fontSize: 18, color: Colors.red),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 30),
               if (hasRegressionData) ...[
                 Text(
                   '편차: ${rSquared.toStringAsFixed(5)}',
@@ -145,117 +146,167 @@ class SetResultPage extends StatelessWidget {
               ],
               SizedBox(
                 height: 360,
-                child: Stack(
-                  children: [
-                    ScatterChart(
-                      ScatterChartData(
-                        scatterSpots: [
-                          for (int i = 0; i < speedValues.length; i++)
-                            ScatterSpot(
-                              testWeights[i].toDouble(),
-                              speedValues[i],
-                              dotPainter: FlDotCirclePainter(
-                                radius: 8,
-                                color: Color(0xff143365),
-                                strokeWidth: 2,
-                                strokeColor: Colors.black,
+                width: 600,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: Center(
+                    child: SizedBox(
+                      height: 320,
+                      width: 360,
+                      child: Stack(
+                        children: [
+                          ScatterChart(
+                            ScatterChartData(
+                              scatterSpots: [
+                                for (int i = 0; i < speedValues.length; i++)
+                                  ScatterSpot(
+                                    testWeights[i].toDouble(),
+                                    speedValues[i],
+                                    dotPainter: FlDotCirclePainter(
+                                      radius: 8,
+                                      color: Color(0xff143365),
+                                    ),
+                                  ),
+                              ],
+                              minX: (testWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
+                              maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
+                              minY: 0,
+                              maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
+                              backgroundColor: Colors.white,
+                              gridData: FlGridData(
+                                show: true,
+                                drawVerticalLine: false,
+                                drawHorizontalLine: true,
+                                horizontalInterval: 0.2,
+                              ),
+                              titlesData: FlTitlesData(
+                                show: true,
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    interval: 0.2,
+                                    getTitlesWidget: (value, meta) {
+                                      return Text(
+                                        value.toStringAsFixed(1), // Format the value as needed
+                                        style: TextStyle(
+                                          fontSize: 12, // Adjust the font size here
+                                          color: Colors.grey,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                rightTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                topTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    interval: 10,
+                                    getTitlesWidget: (value, meta) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 4.0),
+                                        child: Text(
+                                          '${value.toInt()}kg', // Format the value and add "kg"
+                                          style: TextStyle(
+                                            fontSize: 12, // Adjust the font size here
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                              borderData: FlBorderData(
+                                show: true,
+                                border: Border.all(
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (hasRegressionData)
+                            LineChart(
+                              LineChartData(
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: linearLinePoints,
+                                    isCurved: false,
+                                    color: Color(0xff143365),
+                                    barWidth: 5,
+                                    dotData: FlDotData(show: false),
+                                  ),
+                                ],
+                                minX: (testWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
+                                maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
+                                minY: 0,
+                                maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
+                                  drawHorizontalLine: true,
+                                  horizontalInterval: 0.2,
+                                ),
+                                titlesData: FlTitlesData(
+                                  show: true,
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      interval: 0.2,
+                                      getTitlesWidget: (value, meta) {
+                                        return Text(
+                                          value.toStringAsFixed(1), // Format the value as needed
+                                          style: TextStyle(
+                                            fontSize: 12, // Adjust the font size here
+                                            color: Colors.grey,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  rightTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  topTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      interval: 10,
+                                      getTitlesWidget: (value, meta) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(top: 4.0),
+                                          child: Text(
+                                            '${value.toInt()}kg', // Format the value and add "kg"
+                                            style: TextStyle(
+                                              fontSize: 12, // Adjust the font size here
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                borderData: FlBorderData(
+                                  show: true,
+                                  border: Border.all(
+                                    color: Colors.grey,
+                                  ),
+                                ),
                               ),
                             ),
                         ],
-                        minX: (testWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
-                        maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
-                        minY: 0,
-                        maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
-                        backgroundColor: Colors.grey[200],
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: true,
-                          drawHorizontalLine: true,
-                          verticalInterval: 10,
-                          horizontalInterval: 0.2,
-                        ),
-                        titlesData: FlTitlesData(
-                          show: true,
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              interval: 0.2,
-                            ),
-                          ),
-                          rightTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          topTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              interval: 10,
-                            ),
-                          ),
-                        ),
-                        borderData: FlBorderData(
-                          show: true,
-                          border: Border.all(
-                            color: Colors.grey,
-                          ),
-                        ),
                       ),
                     ),
-                    if (hasRegressionData)
-                      LineChart(
-                        LineChartData(
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: linearLinePoints,
-                              isCurved: false,
-                              color: Color(0xff143365),
-                              barWidth: 5,
-                              dotData: FlDotData(show: false),
-                            ),
-                          ],
-                          minX: (testWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
-                          maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
-                          minY: 0,
-                          maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: true,
-                            drawHorizontalLine: true,
-                            verticalInterval: 10,
-                            horizontalInterval: 0.2,
-                          ),
-                          titlesData: FlTitlesData(
-                            show: true,
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                interval: 0.2,
-                              ),
-                            ),
-                            rightTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            topTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                interval: 10,
-                              ),
-                            ),
-                          ),
-                          borderData: FlBorderData(
-                            show: true,
-                            border: Border.all(
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
               ),
               SizedBox(height: 20),
@@ -283,4 +334,3 @@ class SetResultPage extends StatelessWidget {
     );
   }
 }
-

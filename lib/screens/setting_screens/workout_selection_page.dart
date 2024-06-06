@@ -40,7 +40,7 @@ class _SelectPageState extends State<SelectPage> {
           Expanded(
             child: Row(
               children: <Widget>[
-                Expanded(child: buildWorkoutCard("Dead Lift", regressionProvider.regressionModel.regressionIdDL, "Back", 'assets/images/p_training/deadlift.jpeg')),
+                Expanded(child: buildWorkoutCard("Conventional Dead Lift", regressionProvider.regressionModel.regressionIdDL, "Back", 'assets/images/p_training/deadlift.jpeg')),
                 VerticalDivider(width: 1, color: Colors.black),
                 Expanded(child: buildWorkoutCard("Over Head Press", regressionProvider.regressionModel.regressionIdSP, "Shoulder", 'assets/images/p_training/overhead_press.jpeg')),
               ],
@@ -123,7 +123,7 @@ class _SelectPageState extends State<SelectPage> {
       case 'Bench Press':
         exerciseId = '00001';
         break;
-      case 'Dead Lift':
+      case 'Conventional Dead Lift':
         exerciseId = '00004';
         break;
       case 'Over Head Press':
@@ -147,7 +147,7 @@ class _SelectPageState extends State<SelectPage> {
           weight: 0,
           reps: 0,
           realWeights: [],
-          disableModelCreation: false,
+          disableModelCreation: false, restPeriod: 0,
         ),
       ),
     );

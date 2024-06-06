@@ -14,6 +14,7 @@ class GuidePage extends StatefulWidget {
   final String exerciseName;
   final double weight;
   final int reps;
+  final int restPeriod;
   final List<double> realWeights; // 진짜 운동용 무게 받기 _ 불러온 루틴 데이터의 최신 운동수행 무게
   final Map<String, dynamic>? regressionData; // 회귀 데이터 받기
   final bool disableModelCreation;
@@ -24,6 +25,7 @@ class GuidePage extends StatefulWidget {
     required this.exerciseName,
     required this.weight,
     required this.reps,
+    required this.restPeriod,
     required this.realWeights,
     this.regressionData,
     required this.disableModelCreation,
@@ -38,6 +40,7 @@ class _GuidePageState extends State<GuidePage> {
   void initState() {
     super.initState();
     print('Initial realWeights: ${widget.realWeights}');
+    print('쉬는 시간: ${widget.restPeriod}');
   }
 
   String? errorMessage; // For displaying error messages
@@ -73,7 +76,7 @@ class _GuidePageState extends State<GuidePage> {
 
       // API 호출을 위한 데이터 준비
       Map<String, dynamic> requestBody = {
-        'exercise_id': widget.exerciseName,
+        'exercise_id': widget.exerciseId,
         'weight': weightValue,
         'reps': repsValue,
         'units': selectedPlates
@@ -228,8 +231,9 @@ class _GuidePageState extends State<GuidePage> {
                           exerciseId: widget.exerciseId,
                           oneRM: oneRM,
                           threeRM: threeRM,
-                          realWeights: widget.realWeights,
+                          realWeights: testWeights,
                           rData: widget.regressionData,
+                          restPeriod: widget.restPeriod,
                       ),
                     ),
                 );

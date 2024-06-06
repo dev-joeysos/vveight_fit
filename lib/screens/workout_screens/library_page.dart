@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_project/components/styled_button.dart';
 import 'package:http/http.dart' as http;
 
 class Exercise {
@@ -239,7 +240,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 ),
 
                 SizedBox(height: 10),
-                ElevatedButton(
+                StyledButton(
                   onPressed: () {
                     List<Exercise> selectedExercises = [
                       ...mainExercises.where((exercise) => exercise.isSelected),
@@ -248,9 +249,9 @@ class _LibraryPageState extends State<LibraryPage> {
                     Navigator.pop(
                         context, selectedExercises); // 선택 목록을 반환하고 페이지를 닫습니다
                   },
-                  child: Text('선택 완료'),
+                  text: '선택 완료',
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 24),
               ],
             );
           } else {

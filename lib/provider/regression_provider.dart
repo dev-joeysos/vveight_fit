@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class RegressionModel {
-  String regressionIdBench;
+  String? regressionIdBench;
   String? regressionIdSquat;
-  String regressionIdDL;
-  String regressionIdSP;
+  String? regressionIdDL;
+  String? regressionIdSP;
 
   RegressionModel({
     required this.regressionIdBench,
@@ -17,9 +17,9 @@ class RegressionModel {
 class RegressionProvider with ChangeNotifier {
   RegressionModel _regressionModel = RegressionModel(
     regressionIdBench: '207',
-    regressionIdSquat: null,
-    regressionIdDL: '00000',
-    regressionIdSP: '33',
+    regressionIdDL: '237', // '237'
+    regressionIdSP: null,
+    regressionIdSquat: '215',
   );
 
   RegressionModel get regressionModel => _regressionModel;
@@ -29,14 +29,14 @@ class RegressionProvider with ChangeNotifier {
       case 'Bench Press':
         _regressionModel.regressionIdBench = regressionId.toString();
         break;
-      case 'Squat':
-        _regressionModel.regressionIdSquat = regressionId.toString();
-        break;
-      case 'Dead Lift':
+      case 'Conventional Dead Lift':
         _regressionModel.regressionIdDL = regressionId.toString();
         break;
       case 'Over Head Press':
         _regressionModel.regressionIdSP = regressionId.toString();
+        break;
+      case 'Squat':
+        _regressionModel.regressionIdSquat = regressionId.toString();
         break;
       default:
         throw ArgumentError('Unknown exercise name: $exerciseName');

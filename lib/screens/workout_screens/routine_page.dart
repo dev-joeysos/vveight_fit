@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_project/components/styled_button.dart';
 import 'package:provider/provider.dart';
 import '../../components/timer_service.dart';
 import '../../provider/isUpdated.dart';
@@ -20,8 +21,9 @@ class SetDetail {
   double weight = 0;
   int reps = 0;
   bool completed = false;
+  int restPeriod; // restPeriod 추가
 
-  SetDetail({this.weight = 0, this.reps = 0, this.completed = false});
+  SetDetail({this.weight = 0, this.reps = 0, this.completed = false, this.restPeriod = 0});
 }
 
 class RoutinePage extends StatefulWidget {
@@ -364,31 +366,29 @@ class _RoutinePageState extends State<RoutinePage> {
             continue;
           }
 
-          var regressionProvider =
-              Provider.of<RegressionProvider>(context, listen: false);
-          String exerciseName = selectedExercises
-              .firstWhere((exercise) => exercise.exerciseId == exerciseId)
-              .name;
+          // 에러 해결 왜지
+          var regressionProvider = Provider.of<RegressionProvider>(context, listen: false);
 
           var regressionId;
-          switch (exerciseName) {
-            case 'Bench Press':
+          switch (exerciseId) {
+            case '00001':
               regressionId =
                   regressionProvider.regressionModel.regressionIdBench;
               break;
-            case 'Squat':
+            case '00004':
+              regressionId = regressionProvider.regressionModel.regressionIdDL;
+              break;
+            case '00009':
+              regressionId = regressionProvider.regressionModel.regressionIdSP;
+              break;
+            case '00010':
               regressionId =
                   regressionProvider.regressionModel.regressionIdSquat;
               break;
-            case 'Dead Lift':
-              regressionId = regressionProvider.regressionModel.regressionIdDL;
-              break;
-            case 'Over Head Press':
-              regressionId = regressionProvider.regressionModel.regressionIdSP;
-              break;
           }
 
-          int regressionIdInt = int.parse(regressionId);
+          int? regressionIdInt = int.tryParse(regressionId) ?? 0;
+          print('가장 최근 테스트 회귀 아이디: $regressionIdInt');
 
           var mostRecentData = data.firstWhere(
               (element) => element['regression_id'] == regressionIdInt,
@@ -396,7 +396,6 @@ class _RoutinePageState extends State<RoutinePage> {
           int index = selectedExercises
               .indexWhere((exercise) => exercise.exerciseId == exerciseId);
 
-          print('가장 최근 regressionId: $regressionIdInt');
           print('가장 최근에 생성된 회귀 데이터: $exerciseId: $mostRecentData');
 
           setState(() {
@@ -406,10 +405,6 @@ class _RoutinePageState extends State<RoutinePage> {
               'r_squared': mostRecentData['r_squared'],
             };
           });
-
-          // Update the regression ID in the provider
-          Provider.of<RDP>(context, listen: false)
-              .setTestRegressionId(mostRecentData['regression_id']);
         }
       }
     } catch (e) {
@@ -434,8 +429,36 @@ class _RoutinePageState extends State<RoutinePage> {
           .map((exercise) => exercise.exerciseId)
           .toList();
 
-      int? recentRegressionId =
-          Provider.of<RDP>(context, listen: false).testRegressionId;
+      int? recentRegressionId;
+
+      switch (mainExerciseIds[0]) {
+        case '00001':
+          recentRegressionId = int.tryParse(
+              Provider.of<RegressionProvider>(context, listen: false)
+                  .regressionModel
+                  .regressionIdBench ?? '0');
+          break;
+        case '00004':
+          recentRegressionId = int.tryParse(
+              Provider.of<RegressionProvider>(context, listen: false)
+                  .regressionModel
+                  .regressionIdDL ?? '0');
+          break;
+        case '00009':
+          recentRegressionId = int.tryParse(
+              Provider.of<RegressionProvider>(context, listen: false)
+                  .regressionModel
+                  .regressionIdSquat ?? '0');
+          break;
+        case '00010':
+          recentRegressionId = int.tryParse(
+              Provider.of<RegressionProvider>(context, listen: false)
+                  .regressionModel
+                  .regressionIdSP ?? '0');
+          break;
+        default:
+          recentRegressionId = null;
+      }
 
       final requestBody = jsonEncode(<String, dynamic>{
         'user_id': '00001',
@@ -514,6 +537,7 @@ class _RoutinePageState extends State<RoutinePage> {
   }
 
   // 추가된 함수: 응답 데이터를 운동 세트에 매칭
+  // Todo: rest_period 삽입하기
   void updateExerciseSets(List<dynamic> exercises) {
     setState(() {
       for (var exercise in exercises) {
@@ -525,6 +549,7 @@ class _RoutinePageState extends State<RoutinePage> {
             sets.add(SetDetail(
               weight: double.parse(exercise['weights'][i]),
               reps: exercise['reps'] ?? 0,
+              restPeriod: exercise['rest_period'] ?? 0,
             ));
           }
           exerciseSets[index] = sets;
@@ -544,12 +569,39 @@ class _RoutinePageState extends State<RoutinePage> {
     });
   }
 
+// 가이드 카드 위젯
+  Widget _buildGuideCard() {
+    return Card(
+      margin: EdgeInsets.all(16),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '운동 가이드',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text('운동을 추가하고 시작 버튼을 눌러 운동을 시작하세요.'),
+            SizedBox(height: 8),
+            Image.asset('assets/images/puang.png'), // 가이드 이미지 추가 (경로에 맞게 변경)
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var workoutData = Provider.of<WorkoutData>(context);
     var routineState = Provider.of<RoutineState>(context);
     var speedValuesProvider = Provider.of<SpeedValuesProvider>(context);
     var updateStatus = Provider.of<IsUpdated>(context);
+
     // Check if isUpdated is true and call getAll if it is
     if (updateStatus.isUpdated) {
       Future.microtask(() async {
@@ -647,6 +699,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                 onStartWorkout: _startWorkout,
                                 weight: setDetail.weight,
                                 reps: setDetail.reps,
+                                rest_period: setDetail.restPeriod,
                                 realWeights: realWeights,
                                 regressionData: exerciseRegressionData[index],
                               );
@@ -673,6 +726,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                           weight:
                                               exerciseSets[index]!.last.weight,
                                           reps: exerciseSets[index]!.last.reps,
+                                          restPeriod: exerciseSets[index]!.last.restPeriod,
                                           exerciseId: selectedExercises[index]
                                               .exerciseId,
                                           exerciseName:
@@ -702,11 +756,11 @@ class _RoutinePageState extends State<RoutinePage> {
               ? Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    ElevatedButton(
+                    StyledButton(
                       onPressed: _selectExercises,
-                      child: Text('운동 추가'),
+                      text: '운동 추가',
                     ),
-                    ElevatedButton(
+                    StyledButton(
                       onPressed: () async {
                         if (isWorkoutStarted) {
                           workoutDuration =
@@ -736,7 +790,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                   .regressionModel
                                   .regressionIdSquat;
                               break;
-                            case 'Dead Lift':
+                            case 'Conventional Dead Lift':
                               regressionId = Provider.of<RegressionProvider>(
                                       context,
                                       listen: false)
@@ -762,6 +816,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                                 mainExercise.name)?[i],
                                       });
 
+                          // Todo: fix
                           Map<String, dynamic> reviewData = {
                             'user_id': '00001',
                             'test_regression_id': regressionId,
@@ -787,18 +842,24 @@ class _RoutinePageState extends State<RoutinePage> {
                           _toggleWorkout();
                         }
                       },
-                      child: Text(isWorkoutStarted ? '운동 완료' : '운동 시작'),
+                      text: isWorkoutStarted ? '운동 완료' : '운동 시작',
                     ),
-                    ElevatedButton(
-                      onPressed: _printExercises,
-                      child: Text('운동 목록 출력'),
-                    ),
+                    // ElevatedButton(
+                    //   onPressed: _printExercises,
+                    //   child: Text('운동 목록 출력'),
+                    // ),
                   ],
                 )
-              : ElevatedButton(
-                  onPressed: _selectExercises,
-                  child: Text('운동 선택'),
+              : Column(
+                  children: [
+                    _buildGuideCard(), // 가이드 카드 추가
+                    StyledButton(
+                      onPressed: _selectExercises,
+                      text: '운동 선택',
+                    ),
+                  ],
                 ),
+          SizedBox(height:24),
         ],
       ),
     );
