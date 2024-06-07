@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_project/components/styled_button.dart';
 import 'package:http/http.dart' as http;
 
+import '../../components/long_button.dart';
+
 class Exercise {
   final String exerciseId;
   final String name;
@@ -240,7 +242,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 ),
 
                 SizedBox(height: 10),
-                StyledButton(
+                LongButton(
                   onPressed: () {
                     List<Exercise> selectedExercises = [
                       ...mainExercises.where((exercise) => exercise.isSelected),

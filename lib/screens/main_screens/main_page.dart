@@ -36,8 +36,8 @@ class MainPageState extends State<MainPage> {
             right: 0,
             child: Center(
               child: SizedBox(
-                height: 50,
-                width: 200,
+                height: 60,
+                width: 300,
                 child: FloatingActionButton(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(50),
@@ -46,14 +46,14 @@ class MainPageState extends State<MainPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => SelectPage()), // Todo: UI 수정 작업 RoutinePage
+                          builder: (context) => SelectPage()),
                     );
                   },
                   backgroundColor: Color(0xff6BBEE2),
                   child: Text(
                     '운동 시작하기',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 21,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
@@ -95,38 +95,38 @@ class MainPageState extends State<MainPage> {
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _currentIndex = 1;
-                        });
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.search, size: 30, color: Colors.black),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _currentIndex = 2;
-                        });
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.bar_chart, size: 30, color: Colors.black),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // Expanded(
+                  //   child: InkWell(
+                  //     onTap: () {
+                  //       setState(() {
+                  //         _currentIndex = 1;
+                  //       });
+                  //     },
+                  //     child: Column(
+                  //       mainAxisSize: MainAxisSize.min,
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Icon(Icons.search, size: 30, color: Colors.black),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
+                  // Expanded(
+                  //   child: InkWell(
+                  //     onTap: () {
+                  //       setState(() {
+                  //         _currentIndex = 2;
+                  //       });
+                  //     },
+                  //     child: Column(
+                  //       mainAxisSize: MainAxisSize.min,
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Icon(Icons.bar_chart, size: 30, color: Colors.black),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                   Expanded(
                     child: InkWell(
                       onTap: () {

@@ -83,24 +83,24 @@ class _EditRoutineState extends State<EditRoutine> {
             },
           ),
           SizedBox(width: 8),
-          if (widget.setDetail.reps != 0)
-            _buildTextFormField(
-              initialValue: widget.setDetail.reps.toString(),
-              label: '횟수',
-              onChanged: (val) {
-                widget.setDetail.reps = int.tryParse(val) ?? widget.setDetail.reps;
-                widget.onUpdate();
-              },
-            ),
-          if (widget.setDetail.restPeriod != 0)
-            _buildTextFormField(
-              initialValue: widget.setDetail.restPeriod.toString(),
-              label: '휴식 시간',
-              onChanged: (val) {
-                widget.setDetail.reps = int.tryParse(val) ?? widget.setDetail.restPeriod;
-                widget.onUpdate();
-              },
-            ),
+          // if (widget.setDetail.reps != 0)
+          _buildTextFormField(
+            initialValue: widget.setDetail.reps.toString(),
+            label: '횟수',
+            onChanged: (val) {
+              widget.setDetail.reps = int.tryParse(val) ?? widget.setDetail.reps;
+              widget.onUpdate();
+            },
+          ),
+          // if (widget.setDetail.restPeriod != 0)
+          //   _buildTextFormField(
+          //     initialValue: widget.setDetail.restPeriod.toString(),
+          //     label: '휴식 시간',
+          //     onChanged: (val) {
+          //       widget.setDetail.reps = int.tryParse(val) ?? widget.setDetail.restPeriod;
+          //       widget.onUpdate();
+          //     },
+          //   ),
           // IconButton(
           //   icon: Icon(setDetail.completed
           //       ? Icons.check_box

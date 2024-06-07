@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:flutter_project/trashs/recommend_page.dart';
 import '../result_screens/set_result_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -76,7 +75,7 @@ class _CameraPageState extends State<CameraPage> {
       _isFrontCamera = !_isFrontCamera;
       _controller = CameraController(
         widget.cameras.firstWhere((camera) =>
-            camera.lensDirection ==
+        camera.lensDirection ==
             (_isFrontCamera
                 ? CameraLensDirection.front
                 : CameraLensDirection.back)),
@@ -134,16 +133,14 @@ class _CameraPageState extends State<CameraPage> {
       int repNumber = (_buttonPressCount % 3) + 1;
       double currentWeight = widget.testWeights[setNumber - 1];
       double currentSpeed =
-          speedValues[(_buttonPressCount % 3) % speedValues.length];
+      speedValues[(_buttonPressCount % 3) % speedValues.length];
       _showSetResultPage(
           context, repNumber, _secondsPassed, currentWeight, currentSpeed);
     } else if (_buttonText == '결과 보기') {
-      // Call the API and handle the response
       var regressionData = await postRegressionData();
       if (regressionData != null) {
         double oneRepMax = double.parse(regressionData['one_rep_max'].toString());
 
-        // Print the oneRM value from the API response
         print('수정된 oneRM: $oneRepMax');
         Navigator.pushReplacement(
           context,
@@ -157,7 +154,7 @@ class _CameraPageState extends State<CameraPage> {
               rSquared: double.parse(regressionData['r_squared'].toString()),
               slope: double.parse(regressionData['slope'].toString()),
               yIntercept:
-                  double.parse(regressionData['y_intercept'].toString()),
+              double.parse(regressionData['y_intercept'].toString()),
               exerciseId: widget.exerciseId,
               oneRM: oneRepMax,
             ),
@@ -167,7 +164,6 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
 
-  // Function to perform API call and return data
   Future<Map<String, dynamic>?> postRegressionData() async {
     var url = Uri.parse('http://52.79.236.191:3000/api/vbt_core/regression');
     var response = await http.post(
@@ -179,10 +175,10 @@ class _CameraPageState extends State<CameraPage> {
         'type': 'Test',
         'data': List.generate(
             widget.testWeights.length,
-            (index) => {
-                  'weight': widget.testWeights[index],
-                  'max_velocity': maxSpeeds[index],
-                })
+                (index) => {
+              'weight': widget.testWeights[index],
+              'max_velocity': maxSpeeds[index],
+            })
       }),
     );
 
@@ -202,7 +198,6 @@ class _CameraPageState extends State<CameraPage> {
     int seconds = _secondsPassed % 60;
 
     return Scaffold(
-      appBar: AppBar(title: Text("카메라")),
       body: SafeArea(
         child: FutureBuilder<void>(
           future: _initializeControllerFuture,
@@ -219,58 +214,97 @@ class _CameraPageState extends State<CameraPage> {
                     left: 0,
                     right: 0,
                     child: Container(
-                      color: Colors.black45,
+                      color: Colors.black.withOpacity(0.3),
                       padding: EdgeInsets.all(8),
                       alignment: Alignment.center,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(widget.exerciseName,
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold)),
-                          SizedBox(height: 20),
                           Text(
-                              '수행 무게: ${widget.testWeights[(_buttonPressCount % 3)]} kg',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 20)),
+                            widget.exerciseName,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height:3),
+                          if (!_isComplete)
+                            Text(
+                              '수행 무게 = ${widget.testWeights[(_buttonPressCount % 3)].toStringAsFixed(0)} kg',
+                              style: TextStyle(
+                                color: Color(0xff6BBEE2),
+                                fontSize: 21,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           if (_isMeasuring)
                             Text(
-                                "${((_buttonPressCount % 3) + 1)}세트 측정 중입니다.\n평균 속도: ${speedValues[(_buttonPressCount % 3) % speedValues.length].toStringAsFixed(2)} m/s",
-                                textAlign: TextAlign.center,
-                                style:
-                                    TextStyle(fontSize: 20, color: Colors.red)),
+                              "Set ${((_buttonPressCount % 3) + 1)} 평균 속도: ${speedValues[(_buttonPressCount % 3) % speedValues.length].toStringAsFixed(2)} m/s",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           if (_isComplete)
-                            Text("측정이 완료되었습니다!",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 20, color: Colors.green)),
-                          SizedBox(height: 20),
+                            Text(
+                              "측정이 완료되었습니다!",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 21,
+                                color: Colors.greenAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          SizedBox(height: 12),
                           ElevatedButton(
                             onPressed: _onButtonPressed,
-                            child: Text(_buttonText),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xff3DB1D3),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 150, vertical: 18),
+                              shadowColor: Colors.grey.withOpacity(0.5), // 그림자 색상
+                              elevation: 10,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(90),
+                              ),
+                            ),
+                            child: Text(
+                              _buttonText,
+                              style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold ,color: Colors.white),
+                            ),
                           ),
+                          SizedBox(height: 15),
                         ],
                       ),
                     ),
                   ),
                   Positioned(
-                    bottom: 250,
+                    bottom: 772,
                     child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.black45,
-                        borderRadius: BorderRadius.circular(10),
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      child: Text(
+                        '수행 시간: $minutes분 ${seconds}초',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      child: Text('${minutes}분 ${seconds}초',
-                          style: TextStyle(color: Colors.white, fontSize: 20)),
                     ),
                   ),
                   Positioned(
                     top: 10,
                     right: 10,
+                    child: IconButton(
+                      icon: Icon(Icons.close),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      color: Colors.white,
+                    ),
+                  ),
+                  Positioned(
+                    top: 10,
+                    left: 10,
                     child: IconButton(
                       icon: Icon(Icons.flip_camera_ios),
                       onPressed: _toggleCamera,

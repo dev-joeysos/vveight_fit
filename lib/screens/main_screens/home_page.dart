@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'dart:convert';
 import '../../provider/workout_save_success.dart';
 
@@ -20,10 +21,12 @@ class _HomePageState extends State<HomePage> {
   DateTime? _selectedDay;
   DateTime _focusedDay = DateTime.now();
   String _imageAsset = '';
+  String _statusText = '운동 시작';
   final Map<DateTime, List<dynamic>> _events = {};
   Map<String, dynamic>? _workoutDetails;
   dynamic _data;
   WorkoutSaveProvider? _workoutSaveProvider;
+  final PageController _pageController = PageController(); // PageController 추가
 
   @override
   void initState() {
@@ -31,7 +34,7 @@ class _HomePageState extends State<HomePage> {
     _data = widget.initialData;
     print('초기 데이터: ${List.from(_data.reversed)}'); // 역순 출력
     _selectedDay = DateTime.now();
-    _updateImageBasedOnStatus(_selectedDay!);
+    _updateImageAndTextBasedOnStatus(_selectedDay!);
     _prepareEventMap();
     print('데이터 업데이트: ${List.from(_data.reversed)}'); // 역순 출력
   }
@@ -50,6 +53,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _workoutSaveProvider?.removeListener(_handleSaveStatusChange);
+    _pageController.dispose(); // PageController 해제
     super.dispose();
   }
 
@@ -108,7 +112,6 @@ class _HomePageState extends State<HomePage> {
     print('Prepared events: $_events'); // 추가된 이벤트 출력
   }
 
-
   Future<void> _fetchWorkoutDetails(int workoutId) async {
     const url = 'http://52.79.236.191:3000/api/workout/getDetails';
     final body = json.encode({
@@ -134,6 +137,55 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (error) {
       print('Error fetching workout details: $error');
+    }
+  }
+
+  void _updateImageAndTextBasedOnStatus(DateTime selectedDay) {
+    DateTime dateOnly = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    if (_events[dateOnly] != null && _events[dateOnly]!.isNotEmpty) {
+      var status = _events[dateOnly]![0]['status'];
+      switch (status) {
+        case 'ready':
+          _imageAsset = 'assets/images/p_training/ready.jpeg';
+          _statusText = '모델을 생성한 날이에요';
+          break;
+        case 'normal':
+          _imageAsset = 'assets/images/p_good.png';
+          _statusText = '안정적으로 성장하고 있어요';
+          break;
+        case 'burning':
+          _imageAsset = 'assets/images/p_training/burning.jpeg';
+          _statusText = '성장 기록이 뚜렷해요';
+          break;
+        case 'exhausted':
+          _imageAsset = 'assets/images/p_training/exhausted.jpeg';
+          _statusText = '피로가 누적된 날이에요';
+          break;
+        case 'test required':
+          _imageAsset = 'assets/images/p_default.png';
+          _statusText = '모델 갱신이 필요합니다';
+          break;
+        default:
+          _imageAsset = 'assets/images/vv_logo.png';
+          _statusText = '운동합시다~';
+      }
+    } else {
+      _imageAsset = 'assets/images/vv_logo.png';
+      _statusText = '운동을 시작해주세요';
+    }
+  }
+
+  void _showWorkoutInfo(DateTime selectedDay) {
+    DateTime dateOnly = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+    if (_events[dateOnly] != null && _events[dateOnly]!.isNotEmpty) {
+      var workout = _events[dateOnly]!.first; // 가장 최근의 운동 정보를 사용
+      print('Date: $dateOnly, Workout ID: ${workout['workout_id']}, Status: ${workout['status']}');
+      _fetchWorkoutDetails(workout['workout_id']);
+    } else {
+      print('No workouts on this date.');
+      setState(() {
+        _workoutDetails = null; // No workouts available
+      });
     }
   }
 
@@ -172,7 +224,7 @@ class _HomePageState extends State<HomePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '안녕하세요 푸앙님!',
+                                  '안녕하세요 푸앙님',
                                   style: TextStyle(
                                     color: Colors.black,
                                     fontSize: 16,
@@ -180,7 +232,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 ),
                                 Text(
-                                  '운동 31일째',
+                                  _statusText, // 상태에 따른 동적 텍스트
                                   style: TextStyle(
                                     color: Color(0xff6AC7F0),
                                     fontSize: 20,
@@ -197,153 +249,167 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 5),
                 if (_workoutDetails != null)
-                  SizedBox(
-                    height: 300, // Adjust the height as needed
-                    child: PageView(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: Image.asset(
-                            _imageAsset,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              if (_workoutDetails?['routine_id'] == null)
-                                Text(
-                                  _getExerciseName(_workoutDetails?['test_regression']?['exercise_id']) ?? 'LV 프로필',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              else
-                                Text(
-                                  _getExerciseName(_workoutDetails?['exercise_id']) ?? 'No Exercise ID',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-
-                              SizedBox(height: 12),
-                              SizedBox(
-                                  height: 210,
-                                  width: 300,
-                                  child: LineChart(
-                                    LineChartData(
-                                      minY: 0,
-                                      maxY: 1.0,
-                                      lineBarsData: [
-                                        if (_workoutDetails!['workout_regression'] != false)
-                                          LineChartBarData(
-                                            spots: _getLineSpots(_workoutDetails!['workout_regression']),
-                                            isCurved: false,
-                                            color: Color(0xff6BBEE2),
-                                            barWidth: 5,
-                                            dashArray: [10, 8],
-                                            isStrokeCapRound: false,
-                                            belowBarData: BarAreaData(show: false),
-                                            dotData: FlDotData(show: false),
-                                          ),
-                                        LineChartBarData(
-                                          spots: _getLineSpots(_workoutDetails!['test_regression']),
-                                          isCurved: false,
-                                          color: Color(0xff143365),
-                                          barWidth: 4,
-                                          isStrokeCapRound: false,
-                                          belowBarData: BarAreaData(show: false),
-                                          dotData: FlDotData(show: false),
-                                        ),
-                                      ],
-                                      titlesData: FlTitlesData(
-                                        leftTitles: AxisTitles(
-                                          sideTitles: SideTitles(
-                                            showTitles: true,
-                                            interval: 0.2,
-                                            getTitlesWidget: (value, meta) {
-                                              if (value == 0) {
-                                                return Container(); // Hide the left bottom 0.0 value
-                                              }
-                                              return Padding(
-                                                padding: const EdgeInsets.only(right: 4.0),
-                                                child: Text(
-                                                  value.toStringAsFixed(1),
-                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                        bottomTitles: AxisTitles(
-                                          sideTitles: SideTitles(
-                                            showTitles: true,
-                                            interval: 5, // Set interval to 5
-                                            getTitlesWidget: (value, meta) {
-                                              return Padding(
-                                                padding: const EdgeInsets.only(top: 4.0),
-                                                child: Text(
-                                                  '${value.toInt()}kg',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                        rightTitles: AxisTitles(
-                                          sideTitles: SideTitles(showTitles: false),
-                                        ),
-                                        topTitles: AxisTitles(
-                                          sideTitles: SideTitles(showTitles: false),
-                                        ),
-                                      ),
-                                      gridData: FlGridData(
-                                        show: true,
-                                        horizontalInterval: 0.2,
-                                        drawVerticalLine: false,
-                                      ),
-                                      borderData: FlBorderData(
-                                        show: true,
-                                        border: Border.all(
-                                          color: Colors.grey,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      clipData: FlClipData.all(),
-                                    ),
-                                  )
-
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (_imageAsset.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: Container(
+                  Column(
+                    children: [
+                      SizedBox(
+                        height: 300, // Adjust the height as needed
+                        child: PageView(
+                          controller: _pageController,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
                               child: Image.asset(
                                 _imageAsset,
-                                height: 150,
                               ),
                             ),
-                          ),
-                      ],
-                    ),
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                children: [
+                                  if (_workoutDetails?['routine_id'] == null)
+                                    Text(
+                                      _getExerciseName(_workoutDetails?['test_regression']?['exercise_id']) ?? 'LV 프로필',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  else
+                                    Text(
+                                      _getExerciseName(_workoutDetails?['exercise_id']) ?? 'No Exercise ID',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  SizedBox(height: 12),
+                                  SizedBox(
+                                      height: 210,
+                                      width: 300,
+                                      child: LineChart(
+                                        LineChartData(
+                                          minY: 0,
+                                          maxY: 1.0,
+                                          lineBarsData: [
+                                            if (_workoutDetails!['workout_regression'] != false)
+                                              LineChartBarData(
+                                                spots: _getLineSpots(_workoutDetails!['workout_regression']),
+                                                isCurved: false,
+                                                color: Color(0xff6BBEE2),
+                                                barWidth: 5,
+                                                dashArray: [10, 8],
+                                                isStrokeCapRound: false,
+                                                belowBarData: BarAreaData(show: false),
+                                                dotData: FlDotData(show: false),
+                                              ),
+                                            LineChartBarData(
+                                              spots: _getLineSpots(_workoutDetails!['test_regression']),
+                                              isCurved: false,
+                                              color: Color(0xff143365),
+                                              barWidth: 4,
+                                              isStrokeCapRound: false,
+                                              belowBarData: BarAreaData(show: false),
+                                              dotData: FlDotData(show: false),
+                                            ),
+                                          ],
+                                          titlesData: FlTitlesData(
+                                            leftTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                interval: 0.2,
+                                                getTitlesWidget: (value, meta) {
+                                                  if (value == 0) {
+                                                    return Container(); // Hide the left bottom 0.0 value
+                                                  }
+                                                  return Padding(
+                                                    padding: const EdgeInsets.only(right: 4.0),
+                                                    child: Text(
+                                                      value.toStringAsFixed(1),
+                                                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            bottomTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                interval: 5, // Set interval to 5
+                                                getTitlesWidget: (value, meta) {
+                                                  return Padding(
+                                                    padding: const EdgeInsets.only(top: 4.0),
+                                                    child: Text(
+                                                      '${value.toInt()}kg',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            rightTitles: AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                            topTitles: AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                          ),
+                                          gridData: FlGridData(
+                                            show: true,
+                                            horizontalInterval: 0.2,
+                                            drawVerticalLine: false,
+                                          ),
+                                          borderData: FlBorderData(
+                                            show: true,
+                                            border: Border.all(
+                                              color: Colors.grey,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          clipData: FlClipData.all(),
+                                        ),
+                                      )),
+                                ],
+                              ),
+                            ),
+                            // if (_imageAsset.isNotEmpty)
+                            //   Padding(
+                            //     padding: const EdgeInsets.only(bottom: 16.0),
+                            //     child: Container(
+                            //       child: Image.asset(
+                            //         _imageAsset,
+                            //         height: 150,
+                            //       ),
+                            //     ),
+                            //   ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      SmoothPageIndicator(
+                        controller: _pageController,
+                        count: 2,
+                        effect: WormEffect(
+                          dotHeight: 8.0,
+                          dotWidth: 8.0,
+                          spacing: 8.0,
+                          dotColor: Colors.grey,
+                          activeDotColor: Color(0xff6AC7F0),
+                        ),
+                      ),
+                    ],
                   ),
                 if (_workoutDetails == null)
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        SizedBox(height: 10),
+                        SizedBox(height: 27),
                         Image.asset(
                           'assets/images/vv_logo.png',
-                          height: 150,
+                          height: 180,
                         ),
                         SizedBox(height: 30),
                         Text(
@@ -353,7 +419,7 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.grey[400],
                           ),
                         ),
-                        SizedBox(height: 10),
+                        SizedBox(height: 26),
                       ],
                     ),
                   ),
@@ -425,7 +491,7 @@ class _HomePageState extends State<HomePage> {
                         setState(() {
                           _selectedDay = selectedDay;
                           _focusedDay = focusedDay;
-                          _updateImageBasedOnStatus(selectedDay);
+                          _updateImageAndTextBasedOnStatus(selectedDay);
                         });
                         _showWorkoutInfo(selectedDay);
                       },
@@ -525,49 +591,6 @@ class _HomePageState extends State<HomePage> {
       spots.add(FlSpot(x, y));
     }
     return spots;
-  }
-
-  void _updateImageBasedOnStatus(DateTime selectedDay) {
-    DateTime dateOnly =
-    DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-    if (_events[dateOnly] != null && _events[dateOnly]!.isNotEmpty) {
-      var status = _events[dateOnly]![0]['status'];
-      switch (status) {
-        case 'ready':
-          _imageAsset = 'assets/images/p_training/ready.jpeg';
-          break;
-        case 'normal':
-          _imageAsset = 'assets/images/p_good.png';
-          break;
-        case 'burning':
-          _imageAsset = 'assets/images/p_training/burning.jpeg';
-          break;
-        case 'exhausted':
-          _imageAsset = 'assets/images/p_training/exhausted.jpeg';
-          break;
-        case 'test required':
-          _imageAsset = 'assets/images/p_default.png';
-          break;
-        default:
-          _imageAsset = 'assets/images/vv_logo.png';
-      }
-    } else {
-      _imageAsset = 'assets/images/vv_logo.png';
-    }
-  }
-
-  void _showWorkoutInfo(DateTime selectedDay) {
-    DateTime dateOnly = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-    if (_events[dateOnly] != null && _events[dateOnly]!.isNotEmpty) {
-      var workout = _events[dateOnly]!.first; // 가장 최근의 운동 정보를 사용
-      print('Date: $dateOnly, Workout ID: ${workout['workout_id']}, Status: ${workout['status']}');
-      _fetchWorkoutDetails(workout['workout_id']);
-    } else {
-      print('No workouts on this date.');
-      setState(() {
-        _workoutDetails = null; // No workouts available
-      });
-    }
   }
 }
 

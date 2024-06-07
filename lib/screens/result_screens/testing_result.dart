@@ -6,6 +6,8 @@ import 'dart:async';
 import 'package:provider/provider.dart';
 import '../../provider/isUpdated.dart';
 import '../../provider/speed_values.dart';
+import '../../components/styled_container.dart';
+import '../../components/long_button.dart';
 
 class TestingResult extends StatefulWidget {
   final int setNumber;
@@ -165,7 +167,7 @@ class _TestingResultState extends State<TestingResult> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Testing Result"),
+        title: Text("${widget.exerciseName}", style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -179,228 +181,245 @@ class _TestingResultState extends State<TestingResult> {
                     : '${widget.exerciseName} - 세트 ${widget.setNumber} 결과',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 20),
-              Text(
-                '측정 시간: ${widget.setTime}초',
-                style: TextStyle(fontSize: 18),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  SizedBox(height: 15),
+                  StyledContainer(
+                    text: '측정 시간: ${widget.setTime}초',
+                    paddingHorizontal: 90, // Horizontal padding adjusted to prevent text wrapping
+                  ),
+                ],
               ),
-              SizedBox(height: 10),
-              Text(
-                '펑균 속도: ${widget.speedValues.last.toStringAsFixed(2)} m/s',
-                style: TextStyle(fontSize: 18, color: Colors.red),
-              ),
-              SizedBox(height: 10),
-              if (hasRegressionData) ...[
-                Text(
-                  '편차: ${currentRSquared.toStringAsFixed(5)}',
-                  style: TextStyle(fontSize: 18, color: Colors.blue),
+              if (_showRestTimer) ...[
+                SizedBox(height: 15),
+                Container(
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 40),
+                  decoration: BoxDecoration(
+                    color: Color(0xffDEACC5), // 배경색 설정
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: Offset(0, 3), // 그림자 위치 조정
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '휴식 시간: $_remainingRestTime 초',
+                        style: TextStyle(fontSize: 21, color: Colors.white, fontWeight: FontWeight.bold), // 글씨색 반전
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        '창닫기를 누르면 휴식이 중단됩니다.',
+                        style: TextStyle(fontSize: 15, color: Colors.white), // 글씨색 반전
+                      ),
+                    ],
+                  ),
                 ),
-                Text(
-                  '기울기: ${currentSlope.toStringAsFixed(5)}',
-                  style: TextStyle(fontSize: 18, color: Colors.blue),
-                ),
-                Text(
-                  'y 절편: ${currentYIntercept.toStringAsFixed(5)}',
-                  style: TextStyle(fontSize: 18, color: Colors.blue),
-                ),
-                SizedBox(height: 20),
               ],
-              SizedBox(
-                height: 360,
-                child: Stack(
+              SizedBox(height: 15),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.grey),
+                ),
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ScatterChart(
-                      ScatterChartData(
-                        scatterSpots: [
-                          for (int i = 0; i < widget.speedValues.length; i++)
-                            ScatterSpot(
-                              widget.realWeights[i].toDouble(),
-                              widget.speedValues[i],
-                              dotPainter: FlDotCirclePainter(
-                                radius: 8,
-                                color: Color(0xff6BBEE2),
+                    Text(
+                      '평균 속도',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      '${widget.realWeights.last}kg-${widget.speedValues.last.toStringAsFixed(2)}m/s',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    SizedBox(height: 18),
+                    AspectRatio(
+                      aspectRatio: 1.5,
+                      child: Stack(
+                        children: [
+                          ScatterChart(
+                            ScatterChartData(
+                              scatterSpots: [
+                                for (int i = 0; i < widget.speedValues.length; i++)
+                                  ScatterSpot(
+                                    widget.realWeights[i].toDouble(),
+                                    widget.speedValues[i],
+                                    dotPainter: FlDotCirclePainter(
+                                      radius: 6,
+                                      color: Color(0xff6BBEE2),
+                                    ),
+                                  ),
+                              ],
+                              minX: (widget.realWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
+                              maxX: (widget.realWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
+                              minY: 0,
+                              maxY: (widget.speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
+                              backgroundColor: Colors.white,
+                              gridData: FlGridData(
+                                show: true,
+                                drawVerticalLine: false,
+                                drawHorizontalLine: true,
+                                horizontalInterval: 0.2,
+                              ),
+                              titlesData: FlTitlesData(
+                                show: true,
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    interval: 0.2,
+                                    getTitlesWidget: (value, meta) {
+                                      return Text(
+                                        value.toStringAsFixed(1),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                rightTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                topTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    interval: 10,
+                                    getTitlesWidget: (value, meta) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 4.0),
+                                        child: Text(
+                                          '${value.toInt()}kg',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                              borderData: FlBorderData(
+                                show: true,
+                                border: Border.all(
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (hasRegressionData)
+                            LineChart(
+                              LineChartData(
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: linearLinePoints,
+                                    isCurved: false,
+                                    color: Color(0xff143365),
+                                    barWidth: 4.2,
+                                    dotData: FlDotData(show: false),
+                                  ),
+                                  if (rDataLinePoints != null)
+                                    LineChartBarData(
+                                      spots: rDataLinePoints,
+                                      isCurved: false,
+                                      color: Color(0xff6BBEE2),
+                                      barWidth: 6,
+                                      dotData: FlDotData(show: false),
+                                      dashArray: [9, 6],
+                                    ),
+                                ],
+                                minX: (widget.realWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
+                                maxX: (widget.realWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
+                                minY: 0,
+                                maxY: (widget.speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
+                                  drawHorizontalLine: true,
+                                  horizontalInterval: 0.2,
+                                ),
+                                titlesData: FlTitlesData(
+                                  show: true,
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      interval: 0.2,
+                                      getTitlesWidget: (value, meta) {
+                                        return Text(
+                                          value.toStringAsFixed(1),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  rightTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  topTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      interval: 10,
+                                      getTitlesWidget: (value, meta) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(top: 4.0),
+                                          child: Text(
+                                            '${value.toInt()}kg',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                borderData: FlBorderData(
+                                  show: true,
+                                  border: Border.all(
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                clipData: FlClipData.all(),
                               ),
                             ),
                         ],
-                        minX: (widget.realWeights
-                            .reduce((a, b) => a < b ? a : b) -
-                            10)
-                            .toDouble(),
-                        maxX: (widget.realWeights
-                            .reduce((a, b) => a > b ? a : b) +
-                            10)
-                            .toDouble(),
-                        minY: 0,
-                        maxY: (widget.speedValues
-                            .reduce((a, b) => a > b ? a : b) +
-                            0.4),
-                        backgroundColor: Colors.white,
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
-                          drawHorizontalLine: true,
-                          verticalInterval: 10,
-                          horizontalInterval: 0.2,
-                        ),
-                        titlesData: FlTitlesData(
-                          show: true,
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              interval: 0.2,
-                              getTitlesWidget: (value, meta) {
-                                return Text(
-                                  value.toStringAsFixed(1),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          rightTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          topTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              interval: 10,
-                              getTitlesWidget: (value, meta) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 4.0),
-                                  child: Text(
-                                    '${value.toInt()}kg',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        borderData: FlBorderData(
-                          show: true,
-                          border: Border.all(
-                            color: Colors.grey,
-                          ),
-                        ),
                       ),
                     ),
-                    if (hasRegressionData)
-                      LineChart(
-                        LineChartData(
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: linearLinePoints,
-                              isCurved: false,
-                              color: Color(0xff143365),
-                              barWidth: 5,
-                              dotData: FlDotData(show: false),
-                            ),
-                            if (rDataLinePoints != null)
-                              LineChartBarData(
-                                spots: rDataLinePoints,
-                                isCurved: false,
-                                color: Color(0xff6BBEE2),
-                                barWidth: 5,
-                                dotData: FlDotData(show: false),
-                                dashArray: [9, 6],
-                              ),
-                          ],
-                          minX: (widget.realWeights
-                              .reduce((a, b) => a < b ? a : b) -
-                              10)
-                              .toDouble(),
-                          maxX: (widget.realWeights
-                              .reduce((a, b) => a > b ? a : b) +
-                              10)
-                              .toDouble(),
-                          minY: 0,
-                          maxY: (widget.speedValues
-                              .reduce((a, b) => a > b ? a : b) +
-                              0.4),
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            drawHorizontalLine: true,
-                            verticalInterval: 10,
-                            horizontalInterval: 0.2,
-                          ),
-                          titlesData: FlTitlesData(
-                            show: true,
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                interval: 0.2,
-                                getTitlesWidget: (value, meta) {
-                                  return Text(
-                                    value.toStringAsFixed(1),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            rightTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            topTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                interval: 10,
-                                getTitlesWidget: (value, meta) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 4.0),
-                                    child: Text(
-                                      '${value.toInt()}kg',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                          borderData: FlBorderData(
-                            show: true,
-                            border: Border.all(
-                              color: Colors.grey,
-                            ),
-                          ),
-                          clipData: FlClipData.all(),
-                        ),
-                      ),
                   ],
                 ),
               ),
-              if (_showRestTimer) ...[
-                SizedBox(height: 20),
-                Text(
-                  'Rest Time: $_remainingRestTime seconds',
-                  style: TextStyle(fontSize: 18, color: Colors.green),
-                ),
-                Text(
-                  '창닫기를 누르면 휴식이 중단됩니다.',
-                  style: TextStyle(fontSize: 18, color: Colors.green),
-                ),
-              ],
-              SizedBox(height: 20),
-              ElevatedButton(
+              SizedBox(height: 15),
+              LongButton(
                 onPressed: () {
                   if (hasRData) {
                     _saveRegressionData(context);
@@ -408,7 +427,7 @@ class _TestingResultState extends State<TestingResult> {
                     Navigator.of(context).pop();
                   }
                 },
-                child: Text(hasRData ? '저장하기' : '창닫기'),
+                text: hasRData ? '저장하기' : '창닫기',
               ),
             ],
           ),
@@ -417,4 +436,3 @@ class _TestingResultState extends State<TestingResult> {
     );
   }
 }
-

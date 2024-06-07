@@ -1,15 +1,14 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_project/trashs/workCam_page.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:flutter_project/components/long_button.dart';
 import 'package:provider/provider.dart';
+import '../../components/my_button.dart';
 import '../../provider/realweghts_list.dart';
 import '../camera_screens/camera_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter_project/trashs/recommend_page.dart';
-import 'package:flutter_project/screens/workout_screens/routine_page.dart';
 import '../camera_screens/testing.dart';
-import '../main_screens/my_page.dart';
 
 class GuidePage extends StatefulWidget {
   final String exerciseId;
@@ -17,8 +16,8 @@ class GuidePage extends StatefulWidget {
   final double weight;
   final int reps;
   final int restPeriod;
-  final List<double> realWeights; // 진짜 운동용 무게 받기 _ 불러온 루틴 데이터의 최신 운동수행 무게
-  final Map<String, dynamic>? regressionData; // 회귀 데이터 받기
+  final List<double> realWeights;
+  final Map<String, dynamic>? regressionData;
   final bool disableModelCreation;
 
   const GuidePage({
@@ -38,6 +37,8 @@ class GuidePage extends StatefulWidget {
 }
 
 class _GuidePageState extends State<GuidePage> {
+  final PageController _controller = PageController();
+
   @override
   void initState() {
     super.initState();
@@ -45,10 +46,9 @@ class _GuidePageState extends State<GuidePage> {
     print('쉬는 시간: ${widget.restPeriod}');
   }
 
-  String? errorMessage; // For displaying error messages
-  bool isStartExercise = false; // 운동 시작 버튼을 클릭했는지 확인하는 플래그
+  String? errorMessage;
+  bool isStartExercise = false;
 
-  // Function to show the custom input dialog
   Future<void> showInputDialog(BuildContext context) async {
     TextEditingController weightController = TextEditingController();
     TextEditingController repsController = TextEditingController();
@@ -110,11 +110,40 @@ class _GuidePageState extends State<GuidePage> {
         errorMessage = null;
       });
 
-      // 실제 운동할 때 수행한 무게가 루틴 페이지로 반영되어야 합니다.
       Provider.of<TestWeightsProvider>(context, listen: false).setTestWeights(testWeights, eID);
 
-      Navigator.of(context).pop();
-      showResultsDialog(context, oneRM, threeRM, testWeights);
+      final cameras = await availableCameras();
+      if (isStartExercise) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Testing(
+              cameras: cameras,
+              exerciseName: widget.exerciseName,
+              exerciseId: widget.exerciseId,
+              oneRM: oneRM,
+              threeRM: threeRM,
+              realWeights: testWeights,
+              rData: widget.regressionData,
+              restPeriod: widget.restPeriod,
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CameraPage(
+              cameras: cameras,
+              exerciseName: widget.exerciseName,
+              exerciseId: widget.exerciseId,
+              oneRM: oneRM,
+              threeRM: threeRM,
+              testWeights: testWeights,
+            ),
+          ),
+        );
+      }
     }
 
     return showDialog<void>(
@@ -123,8 +152,18 @@ class _GuidePageState extends State<GuidePage> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          title: Text('${widget.exerciseName}'),
-          content: Container(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            widget.exerciseName,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xff143365),
+            ),
+          ),
+          content: SizedBox(
             width: MediaQuery.of(context).size.width * 0.9,
             child: SingleChildScrollView(
               child: ListBody(
@@ -133,21 +172,52 @@ class _GuidePageState extends State<GuidePage> {
                     controller: weightController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: '평균 수행 중량 입력:',
-                      hintText: 'kg',
+                      labelText: '평소에 이정도 무게로 운동해요',
+                      hintText: '숫자(kg)값만 입력해주세요',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Color(0xff143365),
+                        ),
+                      ),
                     ),
                   ),
+                  SizedBox(height: 15),
                   TextField(
                     controller: repsController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: '평균 수행 횟수 입력:',
-                      hintText: '횟수',
+                      labelText: '평소에 이정도 횟수로 운동해요',
+                      hintText: '숫자(reps)값만 입력해주세요',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Color(0xff143365),
+                        ),
+                      ),
                     ),
                   ),
-                  SizedBox(height: 20),
-                  Text("원판 종류를 모두 선택해주세요", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xff585858))),
-                  SizedBox(height: 10),
+                  SizedBox(height: 9),
+                  Divider(
+                    color: Colors.grey[400],
+                    thickness: 1.0,
+                  ),
+                  SizedBox(height: 9),
+                  Text(
+                    "원판 선택",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xff143365),
+                    ),
+                  ),
+                  SizedBox(height: 9),
                   PlateSelection(
                     selectedPlates: selectedPlates,
                     onSelectionChanged: (List<String> plates) {
@@ -171,10 +241,26 @@ class _GuidePageState extends State<GuidePage> {
           actions: <Widget>[
             TextButton(
               onPressed: validateInput,
-              child: Text('확인'),
+              style: TextButton.styleFrom(
+                backgroundColor: Color(0xff143365),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(21),
+                ),
+              ),
+              child: Text(
+                '확인',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
             ),
             TextButton(
-              child: Text('취소'),
+              child: Text(
+                '취소',
+                style: TextStyle(
+                  color: Color(0xff143365),
+                ),
+              ),
               onPressed: () {
                 setState(() {
                   errorMessage = null;
@@ -188,131 +274,65 @@ class _GuidePageState extends State<GuidePage> {
     );
   }
 
-  // Function to display 1RM and 3RM results and navigate to CameraPage
-  void showResultsDialog(BuildContext context, double oneRM, double threeRM, List<double> testWeights) {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('계산 결과'),
-          content: Text('1RM: ${oneRM.toStringAsFixed(0)} kg\n3RM: ${threeRM.toStringAsFixed(0)} kg\n'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('모델 생성'),
-              onPressed: () async {
-                Navigator.of(context).pop();
-                // Update the Provider with the fetched testWeights and exerciseId
-                Provider.of<TestWeightsProvider>(context, listen: false).setTestWeights(testWeights, widget.exerciseId);
-
-                final cameras = await availableCameras();
-                if (isStartExercise) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Testing(
-                        cameras: cameras,
-                        exerciseName: widget.exerciseName,
-                        exerciseId: widget.exerciseId,
-                        oneRM: oneRM,
-                        threeRM: threeRM,
-                        realWeights: testWeights,
-                        rData: widget.regressionData,
-                        restPeriod: widget.restPeriod,
-                      ),
-                    ),
-                  );
-                } else {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CameraPage(
-                        cameras: cameras,
-                        exerciseName: widget.exerciseName,
-                        exerciseId: widget.exerciseId,
-                        oneRM: oneRM,
-                        threeRM: threeRM,
-                        testWeights: testWeights,
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("VBT 가이드라인",
-            style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+        title: Text("촬영 가이드라인",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Center(
             child: Column(
               children: [
-                SizedBox(height: 25),
-                Image.asset('assets/images/tripod.png', width: 100),
-                SizedBox(height: 5),
-                Text("삼각대",
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 5),
-                Text("정확한 촬영을 위해 삼각대를 준비해주세요."),
-                SizedBox(height: 20),
-                Image.asset('assets/images/pose.png', width: 100),
-                SizedBox(height: 5),
-                Text("바른 자세",
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 5),
-                Text("최대한 바른 자세로 운동해주세요."),
-                SizedBox(height: 20),
-                Image.asset('assets/images/pose.png', width: 100),
-                SizedBox(height: 5),
-                Text("바벨 제한",
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 5),
-                Text("정확한 속도 측정을 위해 주변 바벨을 최대한 치워주세요."),
-                SizedBox(height: 20),
+                SizedBox(height: 150),
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 20.0),
-                  padding: EdgeInsets.all(20.0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.blueAccent),
-                    borderRadius: BorderRadius.circular(5.0),
-                  ),
-                  child: Text(
-                    "[모델 생성] 새로운 LV 모델을 생성합니다.\n[운동시작] 기존의 LV 모델로 운동을 시작합니다.",
-                    textAlign: TextAlign.center,
+                  height: 300,
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: PageView(
+                          controller: _controller,
+                          children: [
+                            _buildGuideItem('assets/images/guide_camera.jpeg', '삼각대', '정확한 촬영을 위해 삼각대를 준비해주세요.'),
+                            _buildGuideItem('assets/images/guide_pose.png', '바른 자세', '최대한 바른 자세로 운동해주세요.'),
+                            _buildGuideItem('assets/images/guide_disc.jpeg', '바벨 제한', '정확한 측정을 위해 주변 운동기구를 정리해주세요.'),
+                          ],
+                        ),
+                      ),
+                      SmoothPageIndicator(
+                        controller: _controller,
+                        count: 3,
+                        effect: WormEffect(
+                          dotWidth: 10,
+                          dotHeight: 10,
+                          activeDotColor: Color(0xff2B95C3),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 180),
+                SizedBox(height: 40),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     if (!widget.disableModelCreation)
-                      ElevatedButton(
+                      LongButton(
                         onPressed: () {
-                          isStartExercise = false; // 모델 생성 플래그 설정
+                          isStartExercise = false;
                           showInputDialog(context);
                         },
-                        child: Text('모델 생성1'),
+                        text: 'LV 모델 생성하기',
                       ),
                     if (widget.disableModelCreation)
-                      ElevatedButton(
+                      LongButton(
                         onPressed: () {
-                          isStartExercise = true; // 운동 시작 플래그 설정
+                          isStartExercise = true;
                           showInputDialog(context);
                         },
-                        child: Text('운동 시작'),
+                        text: '운동 시작하기',
                       ),
                   ],
                 ),
@@ -321,6 +341,22 @@ class _GuidePageState extends State<GuidePage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildGuideItem(String imagePath, String title, String subtitle) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Image.asset(imagePath, width: 180),
+        SizedBox(height: 10),
+        Text(
+          title,
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 6),
+        Text(subtitle, style: TextStyle(fontSize: 15),),
+      ],
     );
   }
 }
@@ -348,9 +384,9 @@ class _PlateSelectionState extends State<PlateSelection> {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 10.0,
+      spacing: 9.0,
       children: ['1.25kg', '2.5kg', '5kg', '10kg', '20kg'].map((plate) {
-        return ChoiceChip(
+        return FilterChip(
           label: Text(plate),
           selected: selectedPlates.contains(plate),
           onSelected: (selected) {
@@ -363,10 +399,18 @@ class _PlateSelectionState extends State<PlateSelection> {
               widget.onSelectionChanged(selectedPlates);
             });
           },
-          selectedColor: Colors.blue,
-          // Change to blue when selected
+          selectedColor: Color(0xff143365),
+          checkmarkColor: Colors.white,
           labelStyle: TextStyle(
+            fontSize: 15,
             color: selectedPlates.contains(plate) ? Colors.white : Colors.black,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(21),
+            side: BorderSide(
+              color: selectedPlates.contains(plate) ? Colors.white : Color(0xff143365),
+              width: 1,
+            ),
           ),
         );
       }).toList(),

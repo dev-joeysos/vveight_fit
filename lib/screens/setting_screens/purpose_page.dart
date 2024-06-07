@@ -53,19 +53,19 @@ class _PurposePageState extends State<PurposePage> {
                       onTap: () => goToRoutinePage("hypertrophy"),
                     ),
                   ),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _dontAskAgain,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _dontAskAgain = value ?? false;
-                          });
-                        },
-                      ),
-                      const Text("다음 번부터 묻지 않기(사용자 설정에서 변경 가능)"),
-                    ],
-                  ),
+                  // Row(
+                  //   children: [
+                  //     Checkbox(
+                  //       value: _dontAskAgain,
+                  //       onChanged: (bool? value) {
+                  //         setState(() {
+                  //           _dontAskAgain = value ?? false;
+                  //         });
+                  //       },
+                  //     ),
+                  //     const Text("다음 번부터 묻지 않기(사용자 설정에서 변경 가능)"),
+                  //   ],
+                  // ),
                 ],
               ),
             ),

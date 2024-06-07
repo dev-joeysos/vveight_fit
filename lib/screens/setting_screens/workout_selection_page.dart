@@ -52,8 +52,11 @@ class _SelectPageState extends State<SelectPage> {
   }
 
   Widget buildWorkoutCard(String title, String? keyId, String key, String imagePath) {
-    final bool unavailable = keyId == null || keyId == "00000";
-    final String message = keyId == "00000" ? "LV 프로파일을 갱신해주세요" : "LV 프로파일이 없습니다.";
+    if (keyId == "00000") {
+      keyId = "test required";
+    }
+    final bool unavailable = keyId == null || keyId == "test required";
+    final String message = keyId == "test required" ? "LV 프로파일을 갱신해주세요" : "LV 프로파일이 없습니다.";
     String localizedTitle;
 
     // 이름을 로컬화하는 부분 추가
@@ -146,7 +149,7 @@ class _SelectPageState extends State<SelectPage> {
       case 'Conventional Dead Lift':
         exerciseId = '00004';
         break;
-      case 'Over Head Press':
+      case 'Overhead Press':
         exerciseId = '00009';
         break;
       case 'Squat':

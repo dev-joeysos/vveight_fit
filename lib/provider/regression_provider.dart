@@ -16,9 +16,9 @@ class RegressionModel {
 
 class RegressionProvider with ChangeNotifier {
   RegressionModel _regressionModel = RegressionModel(
-    regressionIdBench: '265',// '207',
+    regressionIdBench: null,// '265',
     regressionIdDL: '237', // '237'
-    regressionIdSP: null,
+    regressionIdSP: '00000',
     regressionIdSquat: '215',
   );
 

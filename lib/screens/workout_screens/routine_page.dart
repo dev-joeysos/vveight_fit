@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_project/components/styled_button.dart';
 import 'package:provider/provider.dart';
+import '../../components/long_button.dart';
 import '../../components/timer_service.dart';
 import '../../provider/isUpdated.dart';
 import '../../provider/realweghts_list.dart';
@@ -584,12 +585,14 @@ class _RoutinePageState extends State<RoutinePage> {
               '운동 가이드',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 24,
+                fontSize: 27,
               ),
             ),
-            SizedBox(height: 8),
-            Text('운동을 추가하고 시작 버튼을 눌러 운동을 시작하세요.'),
-            SizedBox(height: 8),
+            SizedBox(height: 3),
+            Text('운동을 추가하고 시작 버튼을 눌러 운동을 시작하세요.' ,style: TextStyle(
+              fontSize: 15,
+            ),),
+            SizedBox(height: 9),
             Image.asset('assets/images/puang.png'), // 가이드 이미지 추가 (경로에 맞게 변경)
           ],
         ),
@@ -621,7 +624,7 @@ class _RoutinePageState extends State<RoutinePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('루틴 페이지'),
+        title: Text('루틴에 맞춰 운동을 수행합니다', style: TextStyle(fontWeight: FontWeight.bold),),
       ),
       body: Column(
         children: [
@@ -708,15 +711,15 @@ class _RoutinePageState extends State<RoutinePage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      exerciseSets[index]!.add(SetDetail());
-                                    });
-                                  },
-                                  child: Text('세트 추가'),
-                                ),
-                                ElevatedButton(
+                                // ElevatedButton(
+                                //   onPressed: () {
+                                //     setState(() {
+                                //       exerciseSets[index]!.add(SetDetail());
+                                //     });
+                                //   },
+                                //   child: Text('세트 추가'),
+                                // ),
+                                StyledButton(
                                   onPressed: () {
                                     List<double> realWeights = getRealWeights(index);
                                     Navigator.push(
@@ -735,7 +738,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                       ),
                                     );
                                   },
-                                  child: Text('세트 시작'),
+                                  text: '세트 시작',
                                 ),
                               ],
                             ),
@@ -868,7 +871,7 @@ class _RoutinePageState extends State<RoutinePage> {
               : Column(
                   children: [
                     _buildGuideCard(), // 가이드 카드 추가`
-                    StyledButton(
+                    LongButton(
                       onPressed: _selectExercises,
                       text: '운동 선택',
                     ),

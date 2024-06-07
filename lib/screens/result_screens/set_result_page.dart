@@ -1,10 +1,16 @@
+import 'dart:ffi';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_project/components/styled_button.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
 
+import '../../components/long_button.dart';
+import '../../components/styled_container.dart';
 import '../../provider/regression_provider.dart';
 
 class SetResultPage extends StatelessWidget {
@@ -105,9 +111,7 @@ class SetResultPage extends StatelessWidget {
     bool hasRegressionData = rSquared != 0 || slope != 0 || yIntercept != 0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("세트 결과"),
-      ),
+      appBar: AppBar(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -115,44 +119,51 @@ class SetResultPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                hasRegressionData ? '측정 결과' : '$exerciseName - 세트 $setNumber 결과',
+                hasRegressionData ? '측정 결과' : '$setNumber세트 결과',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
-              Text(
-                '측정 시간: ${setTime}초',
-                style: TextStyle(fontSize: 18),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  StyledContainer(
+                    text: '${exerciseName}',
+                  ),
+                  SizedBox(height: 20),
+                  StyledContainer(
+                    text: '측정 시간: ${setTime}초',
+                  ),
+                ],
               ),
               SizedBox(height: 20),
-              Text(
-                '평균 속도: ${speedValues.last.toStringAsFixed(2)} m/s',
-                style: TextStyle(fontSize: 18, color: Colors.red),
-              ),
-              SizedBox(height: 30),
-              if (hasRegressionData) ...[
-                Text(
-                  '편차: ${rSquared.toStringAsFixed(5)}',
-                  style: TextStyle(fontSize: 18, color: Colors.blue),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.grey),
                 ),
-                Text(
-                  '기울기: ${slope.toStringAsFixed(5)}',
-                  style: TextStyle(fontSize: 18, color: Colors.blue),
-                ),
-                Text(
-                  'y 절편: ${yIntercept.toStringAsFixed(5)}',
-                  style: TextStyle(fontSize: 18, color: Colors.blue),
-                ),
-                SizedBox(height: 20),
-              ],
-              SizedBox(
-                height: 360,
-                width: 600,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: Center(
-                    child: SizedBox(
-                      height: 320,
-                      width: 360,
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '평균 속도',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      '${testWeights.last}kg-${speedValues.last.toStringAsFixed(2)}m/s',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    SizedBox(height: 18),
+                    AspectRatio(
+                      aspectRatio: 1.5,
                       child: Stack(
                         children: [
                           ScatterChart(
@@ -163,7 +174,7 @@ class SetResultPage extends StatelessWidget {
                                     testWeights[i].toDouble(),
                                     speedValues[i],
                                     dotPainter: FlDotCirclePainter(
-                                      radius: 8,
+                                      radius: 6,
                                       color: Color(0xff143365),
                                     ),
                                   ),
@@ -187,9 +198,9 @@ class SetResultPage extends StatelessWidget {
                                     interval: 0.2,
                                     getTitlesWidget: (value, meta) {
                                       return Text(
-                                        value.toStringAsFixed(1), // Format the value as needed
+                                        value.toStringAsFixed(1),
                                         style: TextStyle(
-                                          fontSize: 12, // Adjust the font size here
+                                          fontSize: 12,
                                           color: Colors.grey,
                                         ),
                                       );
@@ -210,9 +221,9 @@ class SetResultPage extends StatelessWidget {
                                       return Padding(
                                         padding: const EdgeInsets.only(top: 4.0),
                                         child: Text(
-                                          '${value.toInt()}kg', // Format the value and add "kg"
+                                          '${value.toInt()}kg',
                                           style: TextStyle(
-                                            fontSize: 12, // Adjust the font size here
+                                            fontSize: 12,
                                             color: Colors.black,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -260,9 +271,9 @@ class SetResultPage extends StatelessWidget {
                                       interval: 0.2,
                                       getTitlesWidget: (value, meta) {
                                         return Text(
-                                          value.toStringAsFixed(1), // Format the value as needed
+                                          value.toStringAsFixed(1),
                                           style: TextStyle(
-                                            fontSize: 12, // Adjust the font size here
+                                            fontSize: 12,
                                             color: Colors.grey,
                                           ),
                                         );
@@ -283,9 +294,9 @@ class SetResultPage extends StatelessWidget {
                                         return Padding(
                                           padding: const EdgeInsets.only(top: 4.0),
                                           child: Text(
-                                            '${value.toInt()}kg', // Format the value and add "kg"
+                                            '${value.toInt()}kg',
                                             style: TextStyle(
-                                              fontSize: 12, // Adjust the font size here
+                                              fontSize: 12,
                                               color: Colors.black,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -306,18 +317,11 @@ class SetResultPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  _printBody(context);
-                },
-                child: Text('Print Body'),
-              ),
-              SizedBox(height: 10), // Add some spacing between buttons
-              ElevatedButton(
+              SizedBox(height: 30),
+              LongButton(
                 onPressed: () {
                   if (hasRegressionData) {
                     _saveRegressionData(context);
@@ -325,7 +329,7 @@ class SetResultPage extends StatelessWidget {
                     Navigator.of(context).pop();
                   }
                 },
-                child: Text(hasRegressionData ? '저장하기' : '창닫기'),
+                text: hasRegressionData ? '저장하기' : '창닫기',
               ),
             ],
           ),
