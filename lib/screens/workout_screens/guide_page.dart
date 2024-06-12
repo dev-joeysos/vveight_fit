@@ -113,8 +113,9 @@ class _GuidePageState extends State<GuidePage> {
       Provider.of<TestWeightsProvider>(context, listen: false).setTestWeights(testWeights, eID);
 
       final cameras = await availableCameras();
+      Navigator.of(context).pop();
       if (isStartExercise) {
-        Navigator.pushReplacement(
+        await Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => Testing(
@@ -123,14 +124,14 @@ class _GuidePageState extends State<GuidePage> {
               exerciseId: widget.exerciseId,
               oneRM: oneRM,
               threeRM: threeRM,
-              realWeights: testWeights,
+              realWeights: widget.realWeights,
               rData: widget.regressionData,
               restPeriod: widget.restPeriod,
             ),
           ),
         );
       } else {
-        Navigator.pushReplacement(
+        await Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => CameraPage(
@@ -274,12 +275,15 @@ class _GuidePageState extends State<GuidePage> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text("촬영 가이드라인",
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -330,9 +334,10 @@ class _GuidePageState extends State<GuidePage> {
                       LongButton(
                         onPressed: () {
                           isStartExercise = true;
-                          showInputDialog(context);
+                          // showInputDialog(context);
+                         validateInput(context);
                         },
-                        text: '운동 시작하기',
+                        text: '세트 시작하기',
                       ),
                   ],
                 ),
@@ -357,6 +362,30 @@ class _GuidePageState extends State<GuidePage> {
         SizedBox(height: 6),
         Text(subtitle, style: TextStyle(fontSize: 15),),
       ],
+    );
+  }
+
+  // Todo: base_weight call 값 대신 수행 무게와 sets를 제대로 전달합시다.
+  Future<void> validateInput(BuildContext context) async {
+    double oneRM = 0.0;
+    double threeRM = 0.0;
+
+    final cameras = await availableCameras();
+
+    await Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Testing(
+          cameras: cameras,
+          exerciseName: widget.exerciseName,
+          exerciseId: widget.exerciseId,
+          oneRM: oneRM,
+          threeRM: threeRM,
+          realWeights: widget.realWeights,
+          rData: widget.regressionData,
+          restPeriod: widget.restPeriod,
+        ),
+      ),
     );
   }
 }

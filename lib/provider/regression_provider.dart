@@ -16,10 +16,10 @@ class RegressionModel {
 
 class RegressionProvider with ChangeNotifier {
   RegressionModel _regressionModel = RegressionModel(
-    regressionIdBench: null,// '265',
-    regressionIdDL: '237', // '237'
-    regressionIdSP: '00000',
-    regressionIdSquat: '215',
+    regressionIdBench: '414',// '414',
+    regressionIdDL: null, // '237'
+    regressionIdSP: null,
+    regressionIdSquat: null, // '296'
   );
 
   RegressionModel get regressionModel => _regressionModel;

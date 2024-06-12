@@ -43,9 +43,9 @@ class _TestingState extends State<Testing> {
   int _buttonPressCount = 0;
   bool _isComplete = false;
   bool _isFrontCamera = false;
-  List<double> speedValues = [0.9, 0.7, 0.4]; // mean velocity
-
+  List<double> speedValues = [0.4, 0.35, 0.3]; // mean velocity
   List<double> maxSpeeds = [];
+  List<double> stoppingSpeeds = [];
 
   @override
   void initState() {
@@ -58,6 +58,20 @@ class _TestingState extends State<Testing> {
     _startTimer();
     print('Test weights: ${widget.realWeights}');
     print('Received rData in Testing: ${widget.rData}');
+    _calculateStoppingSpeeds();
+  }
+
+  void _calculateStoppingSpeeds() {
+    double slope = double.parse(widget.rData?['slope'].toString() ?? '0.0');
+    double yIntercept = double.parse(widget.rData?['y_intercept'].toString() ?? '0.0');
+
+    double targetVelocityPercentage = Provider.of<TargetVelo>(context, listen: false).targetVelocity;
+
+    stoppingSpeeds = widget.realWeights.map((weight) {
+      return ((slope * weight) + yIntercept) * targetVelocityPercentage;
+    }).toList();
+
+    print('계산된 중단속도: $stoppingSpeeds');
   }
 
   void _startTimer() {
@@ -95,6 +109,19 @@ class _TestingState extends State<Testing> {
   void _showTestingResultPage(BuildContext context, int setNumber, int setTime,
       double weight, double maxSpeed) {
     maxSpeeds.add(maxSpeed);
+
+    print('--- Testing Result Data ---');
+    print('Set Number: $setNumber');
+    print('Set Time: $setTime seconds');
+    print('Weights: ${widget.realWeights}');
+    print('Speed Values: $maxSpeeds');
+    print('R-Squared: ${widget.rData?['r_squared'] ?? '0.0'}');
+    print('Slope: ${widget.rData?['slope'] ?? '0.0'}');
+    print('Y-Intercept: ${widget.rData?['y_intercept'] ?? '0.0'}');
+    print('Exercise ID: ${widget.exerciseId}');
+    print('One RM: ${widget.oneRM}');
+    print('Rest Period: ${widget.restPeriod} seconds');
+    print('--- End of Testing Result Data ---');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -136,22 +163,36 @@ class _TestingState extends State<Testing> {
       setState(() {
         _isMeasuring = false;
       });
-      int setNumber = (_buttonPressCount ~/ 3) + 1;
-      int repNumber = (_buttonPressCount % 3) + 1;
+      int setNumber = (_buttonPressCount ~/ widget.realWeights.length) + 1;
+      int repNumber = (_buttonPressCount % widget.realWeights.length) + 1;
       double currentWeight = widget.realWeights[setNumber - 1];
       double currentSpeed =
-      speedValues[(_buttonPressCount % 3) % speedValues.length];
+      speedValues[(_buttonPressCount % widget.realWeights.length) % speedValues.length];
       _showTestingResultPage(
           context, repNumber, _secondsPassed, currentWeight, currentSpeed);
     } else if (_buttonText == '결과 보기') {
       // Call the API and handle the response
       var regressionData = await postRegressionData();
+
+      // Print all values before navigation
+      print('--- Final Testing Result Data ---');
+      print('Set Number: ${widget.realWeights.length - 1}');
+      print('Set Time: $_secondsPassed seconds');
+      print('Weights: ${widget.realWeights}');
+      print('Speed Values: $maxSpeeds');
+      print('R-Squared: ${widget.rData?['r_squared'] ?? '0.0'}');
+      print('Slope: ${widget.rData?['slope'] ?? '0.0'}');
+      print('Y-Intercept: ${widget.rData?['y_intercept'] ?? '0.0'}');
+      print('Exercise ID: ${widget.exerciseId}');
+      print('One RM: ${widget.oneRM}');
+      print('Rest Period: 0 seconds');
+      print('--- End of Final Testing Result Data ---');
       if (regressionData != null) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => TestingResult(
-              setNumber: 1,
+              setNumber: widget.realWeights.length + 1,
               exerciseName: widget.exerciseName,
               setTime: _secondsPassed,
               realWeights: widget.realWeights,
@@ -202,7 +243,10 @@ class _TestingState extends State<Testing> {
   Widget build(BuildContext context) {
     int minutes = _secondsPassed ~/ 60;
     int seconds = _secondsPassed % 60;
-    double targetVelocity = Provider.of<TargetVelo>(context).targetVelocity;
+    double targetVelocityPercentage = Provider.of<TargetVelo>(context).targetVelocity;
+    double targetVelocity = stoppingSpeeds.isNotEmpty
+        ? stoppingSpeeds[_buttonPressCount % stoppingSpeeds.length]
+        : 0.0;
 
     return Scaffold(
       body: SafeArea(
@@ -261,7 +305,7 @@ class _TestingState extends State<Testing> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 21,
-                                color: Colors.greenAccent,
+                                color: Color(0xff18FF2F),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -294,15 +338,20 @@ class _TestingState extends State<Testing> {
                   Positioned(
                     bottom: 775,
                     child: Container(
-                      padding:
-                      EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      child: Text('세트 진행 - ${minutes}분 ${seconds}초',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold)),
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      child: _isComplete
+                          ? Container()  // isComplete 된 경우 아무것도 출력하지 않음
+                          : Text(
+                        '수행 시간: ${minutes}분 ${seconds}초',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
+
                   Positioned(
                     top: 10,
                     right: 10,

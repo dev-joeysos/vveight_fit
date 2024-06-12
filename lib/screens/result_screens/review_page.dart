@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../provider/regression_provider.dart';
 import '../../provider/workout_data.dart';
 import '../../provider/workout_manager.dart';
 import '../../provider/workout_save_success.dart';
@@ -46,6 +47,9 @@ class _ReviewPageState extends State<ReviewPage> {
   @override
   void initState() {
     super.initState();
+    print('ReviewPage - workoutDuration: ${widget.workoutDuration}');
+    print('ReviewPage - workoutData: ${widget.workoutData}');
+    print('ReviewPage - compareData: ${jsonEncode(widget.compareData)}');
     print('리뷰 페이지 비교 데이터: ${widget.compareData}');
     // compareData 값이 있으면 데이터 비교 자동 실행
     if (widget.compareData.isNotEmpty) {
@@ -111,7 +115,14 @@ class _ReviewPageState extends State<ReviewPage> {
         setState(() {
           _compareResult = response.body;
         });
-        print('workout/compart: $_compareResult');
+        print('workout/compare: $_compareResult');
+        // Compare the status and update the RegressionProvider if needed
+        final compareResultMap = json.decode(_compareResult);
+        if (compareResultMap['status'] == 'test Required') {
+          final exerciseName = compareResultMap['name'];
+          final regressionProvider = Provider.of<RegressionProvider>(context, listen: false);
+          regressionProvider.updateRegressionId(exerciseName, 00000);
+        }
       } else {
         print('Failed to send data: ${response.reasonPhrase}');
         setState(() {
@@ -207,13 +218,10 @@ class _ReviewPageState extends State<ReviewPage> {
       }
       // 데이터에서 최소 무게 값을 찾아 minX로 설정
       List<dynamic> data = widget.compareData['data'];
-      minX = data.map((entry) => entry['weight'] as double).reduce((a, b) => a < b ? a : b);
+      minX = data.map((entry) => entry['weight'] as double).reduce((a, b) => a < b ? a : b) - 5;
 
-      // 데이터에서 최대 무게 값을 찾아 maxX로 설정하고 20을 더함
-      maxX = data.map((entry) => entry['weight'] as double).reduce((a, b) => a > b ? a : b);
-
-      // // 데이터에서 최소 속도 값을 찾아 minY로 설정
-      // minY = data.map((entry) => entry['mean_velocity'] as double).reduce((a, b) => a < b ? a : b);
+      // 데이터에서 최대 무게 값을 찾아 maxX로 설정하고 5를 더함
+      maxX = data.map((entry) => entry['weight'] as double).reduce((a, b) => a > b ? a : b) + 5;
 
       // 데이터에서 최대 속도 값을 찾아 maxY로 설정
       maxY = data.map((entry) => entry['mean_velocity'] as double).reduce((a, b) => a > b ? a : b);
@@ -256,22 +264,22 @@ class _ReviewPageState extends State<ReviewPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 80),
+                    const SizedBox(height: 60),
                     const Text(
                       '수고하셨어요!', // Main greeting text
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 30,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 9),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                           flex: 2,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 30),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
                             decoration: BoxDecoration(
                               color: const Color(0xffEEB3D1), // Light pink background
                               borderRadius: BorderRadius.circular(16), // Rounded corners
@@ -280,22 +288,38 @@ class _ReviewPageState extends State<ReviewPage> {
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Container(
-                                  padding: EdgeInsets.all(6), // Icon padding
-                                  decoration: BoxDecoration(
-                                    color: Color(0xff6AC7F0), // Container background color
-                                    borderRadius: BorderRadius.circular(12), // Container corner radius
-                                  ),
-                                  child: Icon(Icons.timer, color: Colors.white), // Icon
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  formattedDuration,
-                                  style: TextStyle(
-                                    color: Color(0xff003376),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 30,
-                                  ),
+                                Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(4), // Icon padding
+                                          decoration: BoxDecoration(
+                                            color: Color(0xff6AC7F0), // Container background color
+                                            borderRadius: BorderRadius.circular(5), // Container corner radius
+                                          ),
+                                          child: Icon(Icons.timer, color: Colors.white), // Icon
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          '총 운동시간',
+                                          style: TextStyle(
+                                            color: Color(0xff003376),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      formattedDuration,
+                                      style: TextStyle(
+                                        color: Color(0xff003376),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 24,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -304,28 +328,26 @@ class _ReviewPageState extends State<ReviewPage> {
                         const SizedBox(width: 10),
                         Expanded(
                           flex: 1,
-                          child: GestureDetector(
-                            onTap: () => _showPickOptionsDialog(context),
-                            child: Container(
-                              height: 105,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: Color(0xffEEB3D1), // 배경색
-                              ),
-                              child: Center(
-                                child: _imageFile != null
-                                    ? Image.file(File(_imageFile!.path),
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover)
-                                    : Image.asset( // Display status image in place of camera icon
-                                  statusImageAsset,
-                                  width: 80,
-                                  height: 80,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                          child: Container(
+                            height: 100,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              color: Color(0xffEEB3D1), // 배경색
+                            ),
+                            child: _imageFile != null
+                                ? Image.file(
+                              File(_imageFile!.path),
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            )
+                                : Image.asset(
+                              // Display status image in place of camera icon
+                              statusImageAsset,
+                              width: 50,
+                              height: 40,
+                              // fit: BoxFit.cover,
                             ),
                           ),
                         ),
@@ -333,6 +355,7 @@ class _ReviewPageState extends State<ReviewPage> {
                     ),
                     const SizedBox(height: 12),
                     // Todo: 그래프 완성 > 실제 운동 무게 가져와서 넣기
+                    // 그래프가 포함된 Container 부분 수정
                     Container(
                       width: 600,
                       height: 360,
@@ -341,134 +364,168 @@ class _ReviewPageState extends State<ReviewPage> {
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start, // 왼쪽 정렬을 위해 crossAxisAlignment 설정
                           children: [
-                            SizedBox(
-                              height: 240,
-                              width: 300,
-                              child: LineChart(
-                                LineChartData(
-                                  minX: minX, // X축 최소값 설정
-                                  maxX: maxX, // X축 최대값 설정
-                                  minY: minY, // Y축 최소값 설정
-                                  maxY: maxY, // Y축 최대값 설정
-                                  lineBarsData: [
-                                    if (workoutSlope != null && workoutYIntercept != null)
+                            SizedBox(height: 12), // 그래프와 운동 이름 사이의 간격 추가
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween, // name과 아이콘을 양 끝에 배치
+                              children: [
+                                Text(
+                                  widget.compareData['name'], // 운동 이름
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.check_box_rounded,
+                                  color: Color(0xff6AC7F0), // 아이콘 색상을 파란색으로 설정
+                                  size: 27, // 아이콘 크기 설정
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20), // 그래프와 운동 이름 사이의 간격 추가
+                            Center(
+                              child: SizedBox(
+                                height: 210,
+                                width: 300,
+                                child: LineChart(
+                                  LineChartData(
+                                    minX: minX, // X축 최소값 설정
+                                    maxX: maxX, // X축 최대값 설정
+                                    minY: minY, // Y축 최소값 설정
+                                    maxY: maxY + 0.1, // Y축 최대값 설정
+                                    lineBarsData: [
+                                      if (workoutSlope != null && workoutYIntercept != null)
+                                        LineChartBarData(
+                                          spots: [
+                                            FlSpot(minX, workoutSlope * minX + workoutYIntercept),
+                                            FlSpot(maxX, workoutSlope * maxX + workoutYIntercept)
+                                          ],
+                                          isCurved: false,
+                                          color: Color(0xff6BBEE2),
+                                          barWidth: 5,
+                                          dashArray: [10, 8],
+                                          isStrokeCapRound: false,
+                                          belowBarData: BarAreaData(show: false),
+                                          dotData: FlDotData(show: false),
+                                        ),
+                                      if (testSlope != null && testYIntercept != null)
+                                        LineChartBarData(
+                                          spots: [
+                                            FlSpot(minX, testSlope! * minX + testYIntercept!),
+                                            FlSpot(maxX, testSlope! * maxX + testYIntercept!)
+                                          ],
+                                          isCurved: false,
+                                          color: Color(0xff143365),
+                                          barWidth: 5,
+                                          isStrokeCapRound: false,
+                                          belowBarData: BarAreaData(show: false),
+                                        ),
+                                      // 점 표시
                                       LineChartBarData(
-                                        spots: [
-                                          FlSpot(minX, workoutSlope * minX + workoutYIntercept),
-                                          FlSpot(maxX, workoutSlope * maxX + workoutYIntercept)
-                                        ],
+                                        spots: widget.compareData['data']
+                                            .map<FlSpot>((entry) =>
+                                            FlSpot(entry['weight'], entry['mean_velocity']))
+                                            .toList(),
                                         isCurved: false,
                                         color: Color(0xff6BBEE2),
-                                        barWidth: 5,
-                                        dashArray: [10, 8],
-                                        isStrokeCapRound: false,
-                                        belowBarData: BarAreaData(show: false),
-                                        dotData: FlDotData(show: false),
+                                        barWidth: 0,
+                                        dotData: FlDotData(
+                                          show: true,
+                                          getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                                            radius: 5, // Size of the dot
+                                            color: Color(0xff6BBEE2),
+                                          ),
+                                        ),
                                       ),
-                                    if (testSlope != null && testYIntercept != null)
-                                      LineChartBarData(
-                                        spots: [
-                                          FlSpot(minX, testSlope! * minX + testYIntercept!),
-                                          FlSpot(maxX, testSlope! * maxX + testYIntercept!)
-                                        ],
-                                        isCurved: false,
-                                        color: Color(0xff143365),
-                                        barWidth: 5,
-                                        isStrokeCapRound: false,
-                                        belowBarData: BarAreaData(show: false),
-                                      ),
-                                  ],
-                                  titlesData: FlTitlesData(
-                                    leftTitles: AxisTitles(
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        interval: 0.2,
-                                        getTitlesWidget: (value, meta) {
-                                          // if (value == 0) {
-                                          //   return Container(); // Hide the left bottom 0.0 value
-                                          // }
-                                          return Padding(
-                                            padding: const EdgeInsets.only(right: 0.0),
-                                            child: Text(
-                                              value.toStringAsFixed(1),
-                                              style: TextStyle(fontSize: 15, color: Colors.grey),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    bottomTitles: AxisTitles(
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        getTitlesWidget: (value, meta) {
-                                          final interval = (maxX - minX) / 5;
-                                          return Padding(
-                                            padding: const EdgeInsets.only(top: 4.0),
-                                            child: Text(
-                                              '${(minX + interval * (value - minX) ~/ interval).toInt()}kg',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
+                                    ],
+                                    titlesData: FlTitlesData(
+                                      leftTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          interval: 0.1,
+                                          getTitlesWidget: (value, meta) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(right: 0.0),
+                                              child: Text(
+                                                value.toStringAsFixed(1),
+                                                style: TextStyle(fontSize: 15, color: Colors.grey),
                                               ),
-                                            ),
-                                          );
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      bottomTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          interval: 5,
+                                          getTitlesWidget: (value, meta) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(top: 4.0),
+                                              child: Text(
+                                                '${value.toInt()}kg',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      rightTitles: AxisTitles(
+                                        sideTitles: SideTitles(showTitles: false),
+                                      ),
+                                      topTitles: AxisTitles(
+                                        sideTitles: SideTitles(showTitles: false),
+                                      ),
+                                    ),
+                                    gridData: FlGridData(
+                                      show: true,
+                                      horizontalInterval: 0.1,
+                                      drawVerticalLine: false,
+                                    ),
+                                    borderData: FlBorderData(
+                                      show: false,
+                                    ),
+                                    lineTouchData: LineTouchData(
+                                      touchTooltipData: LineTouchTooltipData(
+                                        getTooltipItems: (touchedSpots) {
+                                          return touchedSpots.map((touchedSpot) {
+                                            var entry = widget.compareData['data'].firstWhere(
+                                                  (entry) => entry['weight'] == touchedSpot.x,
+                                              orElse: () => null,
+                                            );
+                                            if (entry != null) {
+                                              return LineTooltipItem(
+                                                '${entry['weight']}kg, ${entry['mean_velocity'].toStringAsFixed(2)}m/s',
+                                                const TextStyle(color: Colors.black),
+                                              );
+                                            } else {
+                                              return LineTooltipItem(
+                                                '${touchedSpot.x}kg, ${touchedSpot.y.toStringAsFixed(2)}m/s',
+                                                const TextStyle(color: Colors.black),
+                                              );
+                                            }
+                                          }).toList();
                                         },
                                       ),
                                     ),
-
-                                    rightTitles: AxisTitles(
-                                      sideTitles: SideTitles(showTitles: false),
-                                    ),
-                                    topTitles: AxisTitles(
-                                      sideTitles: SideTitles(showTitles: false),
-                                    ),
+                                    clipData: FlClipData.all(), // 경계선을 넘지 않도록 설정
                                   ),
-                                  gridData: FlGridData(
-                                    show: true,
-                                    horizontalInterval: 0.2,
-                                    drawVerticalLine: false,
-                                  ),
-                                  borderData: FlBorderData(
-                                    show: false,
-                                  ),
-                                  lineTouchData: LineTouchData(
-                                    touchTooltipData: LineTouchTooltipData(
-                                      getTooltipItems: (touchedSpots) {
-                                        return touchedSpots.map((touchedSpot) {
-                                          var entry = widget.compareData['data'].firstWhere(
-                                                (entry) => entry['weight'] == touchedSpot.x,
-                                            orElse: () => null,
-                                          );
-                                          if (entry != null) {
-                                            return LineTooltipItem(
-                                              '${entry['weight']}kg, ${entry['mean_velocity'].toStringAsFixed(2)}m/s',
-                                              const TextStyle(color: Colors.black),
-                                            );
-                                          } else {
-                                            return LineTooltipItem(
-                                              '${touchedSpot.x}kg, ${touchedSpot.y.toStringAsFixed(2)}m/s',
-                                              const TextStyle(color: Colors.black),
-                                            );
-                                          }
-                                        }).toList();
-                                      },
-                                    ),
-                                  ),
-
-                                  clipData: FlClipData.all(), // 경계선을 넘지 않도록 설정
                                 ),
                               ),
                             ),
+                            SizedBox(height: 10), // 그래프와 평균 속도 사이의 간격 추가
                             Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              padding: const EdgeInsets.symmetric(vertical: 2.0),
                               child: Text(
                                 '측정 결과',
                                 style: TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -480,6 +537,7 @@ class _ReviewPageState extends State<ReviewPage> {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
@@ -507,11 +565,6 @@ class _ReviewPageState extends State<ReviewPage> {
                         ),
                       ),
                     ),
-                    // Todo: 오운완 사진 업로드
-                    // IconButton(
-                    //   icon: Icon(Icons.camera_alt, color: Colors.white),
-                    //   onPressed: () => _showPickOptionsDialog(context),
-                    // ),
                     const SizedBox(height: 20),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -533,30 +586,9 @@ class _ReviewPageState extends State<ReviewPage> {
                         // 이제 상태가 업데이트 되었으므로 페이지를 닫습니다.
                         Navigator.pop(context);
                       },
-                      child: const Text('홈 화면 바로가기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: const Text('결과 저장하기', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(height: 20),
-                    // ElevatedButton(
-                    //   style: ElevatedButton.styleFrom(
-                    //     backgroundColor: Color(0xff6AC7F0),
-                    //     foregroundColor: Colors.black,
-                    //     minimumSize: Size(double.infinity, 50),
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(12),
-                    //     ),
-                    //   ),
-                    //   onPressed: _sendCompareData,
-                    //   child: const Text('데이터 비교 실행', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    // ),
-                    // const SizedBox(height: 20),
-                    // if (_compareResult.isNotEmpty)
-                    //   Text(
-                    //     _compareResult,
-                    //     style: TextStyle(
-                    //       color: Colors.white,
-                    //       fontSize: 16,
-                    //     ),
-                    //   ),
                   ],
                 ),
               ),
@@ -573,13 +605,13 @@ class _ReviewPageState extends State<ReviewPage> {
     int seconds = totalSeconds % 60;
     String formattedDuration = '';
     if (hours > 0) {
-      formattedDuration += '${hours}H ';
+      formattedDuration += '${hours}시간 ';
     }
     if (minutes > 0) {
-      formattedDuration += '${minutes}M ';
+      formattedDuration += '${minutes}분 ';
     }
     if (seconds > 0) {
-      formattedDuration += '${seconds}S';
+      formattedDuration += '${seconds}초';
     }
     return formattedDuration.trim();
   }

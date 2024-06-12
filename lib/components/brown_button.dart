@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class StyledContainer extends StatelessWidget {
+class BrownButton extends StatelessWidget {
   final String text;
 
-  const StyledContainer({
-    Key? key,
+  const BrownButton({
+    super.key,
     required this.text,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class StyledContainer extends StatelessWidget {
       alignment: Alignment.center, // 텍스트를 가운데로 정렬
       //padding: EdgeInsets.symmetric(horizontal: 120, vertical: 10), // 패딩 설정
       decoration: BoxDecoration(
-        color: Color(0xff143365), // 배경색
+        color: Color(0xffD8BCA1), // 배경색
         borderRadius: BorderRadius.circular(30), // 둥근 모서리
         boxShadow: [
           BoxShadow(

@@ -11,7 +11,9 @@ import 'package:provider/provider.dart';
 
 import '../../components/long_button.dart';
 import '../../components/styled_container.dart';
+import '../../provider/isUpdated.dart';
 import '../../provider/regression_provider.dart';
+import '../../provider/workout_save_success.dart';
 
 class SetResultPage extends StatelessWidget {
   final int setNumber;
@@ -38,6 +40,12 @@ class SetResultPage extends StatelessWidget {
     required this.yIntercept,
     required this.oneRM,
   }) : super(key: key);
+
+  String formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '$minutes분 $remainingSeconds초';
+  }
 
   List<FlSpot> _getLinearLinePoints() {
     List<FlSpot> linePoints = [];
@@ -90,7 +98,8 @@ class SetResultPage extends StatelessWidget {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final regressionId = responseData['regression_id'];
-        print('Saved regression data with ID: $regressionId');
+        print('SetResultPage에서 받은 ID: $regressionId');
+        Provider.of<WorkoutSaveProvider>(context, listen: false).setSaved(true);
 
         // Update the RegressionProvider with the new regressionId based on exerciseName
         Provider.of<RegressionProvider>(context, listen: false)
@@ -111,7 +120,10 @@ class SetResultPage extends StatelessWidget {
     bool hasRegressionData = rSquared != 0 || slope != 0 || yIntercept != 0;
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+      ),
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -122,27 +134,25 @@ class SetResultPage extends StatelessWidget {
                 hasRegressionData ? '측정 결과' : '$setNumber세트 결과',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 24),
               Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   StyledContainer(
-                    text: '${exerciseName}',
+                    text: exerciseName,
                   ),
                   SizedBox(height: 20),
                   StyledContainer(
-                    text: '측정 시간: ${setTime}초',
+                    text: hasRegressionData
+                        ? '모델 생성이 완료되었습니다'
+                        : '측정시간: ${formatTime(setTime)}',
                   ),
+
                 ],
               ),
               SizedBox(height: 20),
               Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.grey),
-                ),
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -153,19 +163,45 @@ class SetResultPage extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 3),
-                    Text(
-                      '${testWeights.last}kg-${speedValues.last.toStringAsFixed(2)}m/s',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey,
+                    if (hasRegressionData)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (int i = 0; i < testWeights.length; i++) ...[
+                            Text(
+                              '${testWeights[i]}kg-${speedValues[i].toStringAsFixed(2)}m/s',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (i < testWeights.length - 1) // 마지막 항목 뒤에는 쉼표를 추가하지 않음
+                              Text(
+                                ', ',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                          ],
+                        ],
+                      )
+                    else
+                      Text(
+                        '${testWeights[setNumber - 1]}kg-${speedValues[setNumber - 1].toStringAsFixed(2)}m/s',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 18),
+                    SizedBox(height: 15),
                     AspectRatio(
                       aspectRatio: 1.5,
                       child: Stack(
                         children: [
+
                           ScatterChart(
                             ScatterChartData(
                               scatterSpots: [
@@ -179,23 +215,22 @@ class SetResultPage extends StatelessWidget {
                                     ),
                                   ),
                               ],
-                              minX: (testWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
-                              maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
+                              minX: (testWeights.reduce((a, b) => a < b ? a : b) - 5).round().toDouble(),
+                              maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 5).round().toDouble(),
                               minY: 0,
-                              maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
-                              backgroundColor: Colors.white,
+                              maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.1),
                               gridData: FlGridData(
                                 show: true,
                                 drawVerticalLine: false,
                                 drawHorizontalLine: true,
-                                horizontalInterval: 0.2,
+                                horizontalInterval: 0.1,
                               ),
                               titlesData: FlTitlesData(
                                 show: true,
                                 leftTitles: AxisTitles(
                                   sideTitles: SideTitles(
                                     showTitles: true,
-                                    interval: 0.2,
+                                    interval: 0.1,
                                     getTitlesWidget: (value, meta) {
                                       return Text(
                                         value.toStringAsFixed(1),
@@ -216,7 +251,7 @@ class SetResultPage extends StatelessWidget {
                                 bottomTitles: AxisTitles(
                                   sideTitles: SideTitles(
                                     showTitles: true,
-                                    interval: 10,
+                                    interval: 5,
                                     getTitlesWidget: (value, meta) {
                                       return Padding(
                                         padding: const EdgeInsets.only(top: 4.0),
@@ -224,7 +259,7 @@ class SetResultPage extends StatelessWidget {
                                           '${value.toInt()}kg',
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: Colors.black,
+                                            color: Colors.grey[800],
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -234,7 +269,7 @@ class SetResultPage extends StatelessWidget {
                                 ),
                               ),
                               borderData: FlBorderData(
-                                show: true,
+                                show: false,
                                 border: Border.all(
                                   color: Colors.grey,
                                 ),
@@ -253,22 +288,22 @@ class SetResultPage extends StatelessWidget {
                                     dotData: FlDotData(show: false),
                                   ),
                                 ],
-                                minX: (testWeights.reduce((a, b) => a < b ? a : b) - 10).toDouble(),
-                                maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 10).toDouble(),
+                                minX: (testWeights.reduce((a, b) => a < b ? a : b) - 5).round().toDouble(),
+                                maxX: (testWeights.reduce((a, b) => a > b ? a : b) + 5).round().toDouble(),
                                 minY: 0,
-                                maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.4),
+                                maxY: (speedValues.reduce((a, b) => a > b ? a : b) + 0.1),
                                 gridData: FlGridData(
                                   show: true,
                                   drawVerticalLine: false,
                                   drawHorizontalLine: true,
-                                  horizontalInterval: 0.2,
+                                  horizontalInterval: 0.1,
                                 ),
                                 titlesData: FlTitlesData(
                                   show: true,
                                   leftTitles: AxisTitles(
                                     sideTitles: SideTitles(
                                       showTitles: true,
-                                      interval: 0.2,
+                                      interval: 0.1,
                                       getTitlesWidget: (value, meta) {
                                         return Text(
                                           value.toStringAsFixed(1),
@@ -289,7 +324,7 @@ class SetResultPage extends StatelessWidget {
                                   bottomTitles: AxisTitles(
                                     sideTitles: SideTitles(
                                       showTitles: true,
-                                      interval: 10,
+                                      interval: 5,
                                       getTitlesWidget: (value, meta) {
                                         return Padding(
                                           padding: const EdgeInsets.only(top: 4.0),
@@ -307,7 +342,7 @@ class SetResultPage extends StatelessWidget {
                                   ),
                                 ),
                                 borderData: FlBorderData(
-                                  show: true,
+                                  show: false,
                                   border: Border.all(
                                     color: Colors.grey,
                                   ),
@@ -320,7 +355,7 @@ class SetResultPage extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: 30),
+              SizedBox(height:100),
               LongButton(
                 onPressed: () {
                   if (hasRegressionData) {

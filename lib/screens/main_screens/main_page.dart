@@ -27,6 +27,7 @@ class MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           _pages(widget.data)[_currentIndex],
@@ -72,9 +73,11 @@ class MainPageState extends State<MainPage> {
             height: 0.5,
             color: Color(0xff404040),
           ),
-          BottomAppBar(
-            child: SizedBox(
-              height: 60, // Adjust height as needed
+          Container(
+            height: 60, // Adjust height as needed
+            color: Colors.white, // Add background color to the Container
+            child: BottomAppBar(
+              color: Colors.white,
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -95,6 +98,7 @@ class MainPageState extends State<MainPage> {
                       ),
                     ),
                   ),
+                  // 주석 처리된 부분을 포함하거나 필요에 따라 다른 아이콘을 추가할 수 있습니다.
                   // Expanded(
                   //   child: InkWell(
                   //     onTap: () {

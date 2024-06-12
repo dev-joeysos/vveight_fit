@@ -48,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
             Text(
-              'VBT Based Training APP',
+              'VBT 기반 트레이닝 앱',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,

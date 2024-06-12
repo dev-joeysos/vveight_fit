@@ -98,8 +98,10 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text('라이브러리 페이지'),
+        backgroundColor: Colors.white,
       ),
       body: FutureBuilder<Map<String, List<Exercise>>>(
         future: exercisesFuture,
@@ -187,9 +189,9 @@ class _LibraryPageState extends State<LibraryPage> {
                 Expanded(
                   child: Column(
                     children: [
-                      Text('메인 운동',
+                      Text('메인운동',
                           style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
+                              fontSize: 18)),
                       Expanded(
                         child: ListView.builder(
                           itemCount: filteredMainExercises.length,
@@ -212,9 +214,9 @@ class _LibraryPageState extends State<LibraryPage> {
                           },
                         ),
                       ),
-                      Text('서브 운동',
+                      Text('서브운동',
                           style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
+                              fontSize: 18)),
                       Expanded(
                         child: ListView.builder(
                           itemCount: filteredSubExercises.length,

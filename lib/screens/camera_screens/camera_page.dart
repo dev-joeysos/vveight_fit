@@ -37,7 +37,7 @@ class _CameraPageState extends State<CameraPage> {
   int _buttonPressCount = 0;
   bool _isComplete = false;
   bool _isFrontCamera = false;
-  List<double> speedValues = [0.96, 0.4, 0.3];
+  List<double> speedValues = [0.3, 0.21, 0.19];
 
   List<double> maxSpeeds = [];
 
@@ -228,13 +228,13 @@ class _CameraPageState extends State<CameraPage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height:3),
+                          // SizedBox(height:3),
                           if (!_isComplete)
                             Text(
                               '수행 무게 = ${widget.testWeights[(_buttonPressCount % 3)].toStringAsFixed(0)} kg',
                               style: TextStyle(
                                 color: Color(0xff6BBEE2),
-                                fontSize: 21,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -243,7 +243,7 @@ class _CameraPageState extends State<CameraPage> {
                               "Set ${((_buttonPressCount % 3) + 1)} 평균 속도: ${speedValues[(_buttonPressCount % 3) % speedValues.length].toStringAsFixed(2)} m/s",
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 15,
                                 color: Colors.redAccent,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -254,7 +254,7 @@ class _CameraPageState extends State<CameraPage> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 21,
-                                color: Colors.greenAccent,
+                                color: Color(0xff18FF2F),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -264,7 +264,7 @@ class _CameraPageState extends State<CameraPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Color(0xff3DB1D3),
                               padding: EdgeInsets.symmetric(
-                                  horizontal: 150, vertical: 18),
+                                  horizontal: 120, vertical: 12),
                               shadowColor: Colors.grey.withOpacity(0.5), // 그림자 색상
                               elevation: 10,
                               shape: RoundedRectangleBorder(
@@ -273,21 +273,21 @@ class _CameraPageState extends State<CameraPage> {
                             ),
                             child: Text(
                               _buttonText,
-                              style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold ,color: Colors.white),
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold ,color: Colors.white),
                             ),
                           ),
-                          SizedBox(height: 15),
+                          SizedBox(height: 12),
                         ],
                       ),
                     ),
                   ),
                   Positioned(
-                    bottom: 772,
+                    bottom: 774,
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       child: Text(
                         '수행 시간: $minutes분 ${seconds}초',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),

@@ -54,26 +54,30 @@ class _EditRoutineState extends State<EditRoutine> {
       });
     }
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 0),
-      padding: EdgeInsets.all(4),
+      margin: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+      padding: EdgeInsets.all(12),
+      height: 72,
       decoration: BoxDecoration(
-        color: Colors.blue[100],
+        color: Colors.white,
+        border: Border.all(color: Colors.black, width: 1), // border 두께 설정
+        borderRadius: BorderRadius.circular(8), // border radius 설정
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.black.withOpacity(0.15),
             spreadRadius: 1,
-            blurRadius: 3,
-            offset: Offset(0, 1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Text("Set ${widget.setIndex}",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            padding: EdgeInsets.symmetric(horizontal: 2),
+            child: Text("Set${widget.setIndex}",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ),
+          SizedBox(width: 8),
           _buildTextFormField(
             initialValue: widget.setDetail.weight.toString(),
             label: 'kg',
@@ -86,21 +90,12 @@ class _EditRoutineState extends State<EditRoutine> {
           // if (widget.setDetail.reps != 0)
           _buildTextFormField(
             initialValue: widget.setDetail.reps.toString(),
-            label: '횟수',
+            label: 'reps',
             onChanged: (val) {
               widget.setDetail.reps = int.tryParse(val) ?? widget.setDetail.reps;
               widget.onUpdate();
             },
           ),
-          // if (widget.setDetail.restPeriod != 0)
-          //   _buildTextFormField(
-          //     initialValue: widget.setDetail.restPeriod.toString(),
-          //     label: '휴식 시간',
-          //     onChanged: (val) {
-          //       widget.setDetail.reps = int.tryParse(val) ?? widget.setDetail.restPeriod;
-          //       widget.onUpdate();
-          //     },
-          //   ),
           // IconButton(
           //   icon: Icon(setDetail.completed
           //       ? Icons.check_box
@@ -154,7 +149,8 @@ class _EditRoutineState extends State<EditRoutine> {
           labelText: label,
           border: OutlineInputBorder(),
           isDense: true,
-          fillColor: Colors.white,
+          contentPadding: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          fillColor: Colors.black,
           focusedBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.blue), // Focused border color
           ),

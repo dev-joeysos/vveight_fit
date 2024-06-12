@@ -5,6 +5,7 @@ import 'package:flutter_project/components/styled_button.dart';
 import 'package:provider/provider.dart';
 import '../../components/long_button.dart';
 import '../../components/timer_service.dart';
+import '../../components/white_button.dart';
 import '../../provider/isUpdated.dart';
 import '../../provider/realweghts_list.dart';
 import '../../provider/regression_data.dart';
@@ -100,35 +101,36 @@ class _RoutinePageState extends State<RoutinePage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.blue[900],
-        borderRadius: BorderRadius.circular(10),
+        color: Color(0xff6BBEE2).withOpacity(0.75),
+        borderRadius: BorderRadius.circular(20),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              Icon(Icons.timer, color: Colors.white),
-              SizedBox(width: 8),
+              Icon(Icons.timer, color: Colors.white, size: 15),
+              SizedBox(width: 5),
               Text(
                 '타이머',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 5),
           Text(
             formatTime(Provider.of<TimerService>(context).seconds),
             style: TextStyle(
               color: Colors.white,
-              fontSize: 24,
+              fontSize: 21,
             ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 0),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -573,27 +575,45 @@ class _RoutinePageState extends State<RoutinePage> {
   }
 
 // 가이드 카드 위젯
+// 가이드 카드 위젯
   Widget _buildGuideCard() {
-    return Card(
+    return Container(
       margin: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white, // 배경색을 하얗게 설정
+        border: Border.all(color: Colors.black, width: 1), // 보더 라인 추가
+        borderRadius: BorderRadius.circular(24), // 모서리 둥글게 설정
+      ),
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '운동 가이드',
+              '선택 가이드',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 27,
+                fontSize: 24,
               ),
             ),
-            SizedBox(height: 3),
-            Text('운동을 추가하고 시작 버튼을 눌러 운동을 시작하세요.' ,style: TextStyle(
-              fontSize: 15,
-            ),),
-            SizedBox(height: 9),
-            Image.asset('assets/images/puang.png'), // 가이드 이미지 추가 (경로에 맞게 변경)
+            Text(
+              '원하는 운동 종목을 선택하세요.',
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 60),
+            Center(
+              child: Image.asset(
+                'assets/images/puang.png', // 가이드 이미지 추가 (경로에 맞게 변경)
+                width: 200, // 원하는 너비로 설정
+                height: 200, // 원하는 높이로 설정
+                fit: BoxFit.contain, // 이미지를 설정된 크기에 맞게 조절
+              ),
+            ),
+            SizedBox(height: 60),
           ],
         ),
       ),
@@ -609,22 +629,23 @@ class _RoutinePageState extends State<RoutinePage> {
     var testWeightsProvider = Provider.of<TestWeightsProvider>(context);
 
     // Check if isUpdated is true and call getAll if it is
-    if (updateStatus.isUpdated) {
+    if (updateStatus.isUpdated && !isWorkoutStarted) {
       Future.microtask(() async {
         await getAll();
         updateStatus.setUpdated(false); // Reset isUpdated to false
-        if (!isWorkoutStarted) {
-          _toggleWorkout(); // Trigger workout action again
-        }
+        _toggleWorkout(); // Trigger workout action again
         setState(() {
           expandedStates.updateAll((key, value) => true);
         });
       });
     }
 
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('루틴에 맞춰 운동을 수행합니다', style: TextStyle(fontWeight: FontWeight.bold),),
+        title: Text('루틴 페이지',),
+        backgroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -636,12 +657,16 @@ class _RoutinePageState extends State<RoutinePage> {
                 ExerciseData? exerciseData = workoutData.getData(selectedExercises[index].name);
                 List<double>? speedValues = speedValuesProvider.getSpeedValues(selectedExercises[index].name);
 
+                // Check if exercise is in mainExerciseIds
+                bool isMainExercise = selectedExercises[index].isMain;
+                bool isCompleted = updateStatus.isUpdated && isMainExercise;
+
                 return Container(
-                  margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  padding: EdgeInsets.all(8),
+                  margin: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                  padding: EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.blue[100],
-                    borderRadius: BorderRadius.circular(10),
+                    color: isCompleted ? Color(0xff143365) : Color(0xff6AC7F0),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.black),
                     boxShadow: [
                       BoxShadow(
@@ -657,7 +682,7 @@ class _RoutinePageState extends State<RoutinePage> {
                     children: [
                       ListTile(
                         title: Text(selectedExercises[index].name,
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 21)),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 21, color: Colors.white)),
                         onTap: () => _toggleExpanded(index),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -708,6 +733,7 @@ class _RoutinePageState extends State<RoutinePage> {
                                     : null, // testWeightsProvider 값 전달
                               );
                             }).toList(),
+                            if (!isCompleted)
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
@@ -717,11 +743,19 @@ class _RoutinePageState extends State<RoutinePage> {
                                 //       exerciseSets[index]!.add(SetDetail());
                                 //     });
                                 //   },
-                                //   child: Text('세트 추가'),
+                                //                                 //   child: Text('세트 추가'),
                                 // ),
-                                StyledButton(
+                                whiteButton(
                                   onPressed: () {
                                     List<double> realWeights = getRealWeights(index);
+                                    // 값을 콘솔에 출력
+                                    print('Weight: ${exerciseSets[index]!.last.weight}');
+                                    print('Reps: ${exerciseSets[index]!.last.reps}');
+                                    print('RestPeriod: ${exerciseSets[index]!.last.restPeriod}');
+                                    print('ExerciseId: ${selectedExercises[index].exerciseId}');
+                                    print('ExerciseName: ${selectedExercises[index].name}');
+                                    print('RealWeights: $realWeights');
+                                    print('RegressionData: ${exerciseRegressionData[index]}');
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -845,7 +879,8 @@ class _RoutinePageState extends State<RoutinePage> {
                           };
 
                           print('Sending data to ReviewPage: $reviewData');
-
+                          // Set isUpdated to true
+                          Provider.of<IsUpdated>(context, listen: false).setUpdated(true);
                           Navigator.of(context)
                               .pushReplacement(MaterialPageRoute(
                             builder: (context) => ReviewPage(
