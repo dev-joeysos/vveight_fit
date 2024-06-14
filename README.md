@@ -1,16 +1,16 @@
-# flutter_project
+# 베이트핏
+<p align="center">
+  <img src="https://github.com/dev-joeysos/vveight_fit/assets/77220829/d4a3e4a6-4063-43bf-8159-a9b2c2be5a7f" height = 240>
+</p>
 
-A new Flutter project.
+- VBT(Velocity-Based Training) 기반 훈련법을 적용한 운동 루틴 자동생성 어플리케이션
+- VBT 기반 훈련법은 속도를 기반으로 사용자의 운동 중단지점을 체크해주는 훈련법으로, 선수급의 운동인에게도 효과가 입증된 훈련법이다.
+- 본래 훈련을 위해서 고가의 전문 장비가 필요한데, 베이트핏을 사용하면 고가의 장비 없이 휴대폰의 카메라만으로 VBT 기반 훈련법으로 운동할 수 있다.
+- VBT 기반 트레이닝은 운동 수행능력이 어느정도 보장된 중급자 이상의 헬스인을 타겟으로 한다. 이들은 폭발적인 근성장과 운동 능력 향상을 목표로 하며 고중량의 무게로 운동을 수행하는 경우가 많다. 이는 피로도 누적과 함께 부상 위험을 증가시킨다. 만약 부상을 입는 경우 오히려 이전보다 수행 능력이 떨어지거나 심한 경우 운동을 아에 못하게 되는 수가 있다. 베이트핏은 헬스인이 안전하게 성장할 수 있도록 속도를 기반으로 중단지점을 측정하고, 피로도 분석과 함께 부상 위험의 사전 예방을 목표로 한다.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+## FE Menual
+```
+flutter pub get
+flutter run
+```
